@@ -3,10 +3,10 @@ import Phaser from 'phaser';
 import { GameScene } from './game/scene';
 import { session } from './net/session';
 import {
-  applyState, gameInputEnabled, goHome, initUI, isInputBlocked, onFrame, requestRestart, setScreen, showReconnecting, toast,
+  applyState, gameInputEnabled, goHome, initUI, isInputBlocked, onFrame, openMenu, openPlay, requestRestart, setScreen, showReconnecting, toast,
   togglePause,
 } from './ui/ui';
-import { sfx } from './audio/sfx';
+import { musicState, sfx } from './audio/sfx';
 import { isTouchDevice } from './settings';
 
 function dpr(): number {
@@ -99,4 +99,4 @@ scene.whenReady(async () => {
 });
 
 // Debug handle for automated tests.
-(window as unknown as { __duality: unknown }).__duality = { session, scene };
+(window as unknown as { __duality: unknown }).__duality = { session, scene, ui: { openPlay, openMenu }, audio: { musicState } };

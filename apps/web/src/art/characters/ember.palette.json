@@ -1,0 +1,46 @@
+{
+  "d": {
+    "hex": "#8e2213",
+    "role": "deep shadow: collar, limb separation"
+  },
+  "r": {
+    "hex": "#c8341b",
+    "role": "outer flame rim / body outline"
+  },
+  "o": {
+    "hex": "#ee5019",
+    "role": "flame orange / body base"
+  },
+  "a": {
+    "hex": "#fa7c1b",
+    "role": "amber mid-flame / body light"
+  },
+  "g": {
+    "hex": "#fca82a",
+    "role": "gold inner flame / boots"
+  },
+  "y": {
+    "hex": "#fcc845",
+    "role": "yellow inner flame / core rim"
+  },
+  "l": {
+    "hex": "#fde27f",
+    "role": "light yellow: flame heart, face shading, core"
+  },
+  "c": {
+    "hex": "#fdf2cf",
+    "role": "face cream"
+  },
+  "e": {
+    "hex": "#3f120b",
+    "role": "eye outline / pupil"
+  },
+  "i": {
+    "hex": "#a8321a",
+    "role": "iris"
+  },
+  "w": {
+    "hex": "#ffffff",
+    "role": "eye sclera / highlight"
+  }
+}

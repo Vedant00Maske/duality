@@ -3,8 +3,11 @@ services:
   - type: web
     name: duality
     runtime: node
-    plan: starter # 'free' works too, but free instances sleep after 15 min idle (slow first load)
-    buildCommand: npm ci && npm run build
+    # 'free' needs no payment method but sleeps after 15 min idle (first load then takes ~30–60 s).
+    # Switch to 'starter' for an always-on instance.
+    plan: free
+    # --include=dev: NODE_ENV=production would otherwise make `npm ci` skip Vite/TypeScript/esbuild.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /health
     envVars:

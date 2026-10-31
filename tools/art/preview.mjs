@@ -11,8 +11,8 @@ const overlay = flag === '--overlay';
 const spec = JSON.parse(fs.readFileSync('apps/web/src/art/characters/spec.json', 'utf8'));
 const { width: w, height: h, rgba } = decodePNG(fs.readFileSync(src));
 const PAD = 12;
-// Layout: [enlarged sprite] [gap] [1x and 2x copies on a dark game-like background]
-const W = w * S + PAD * 3 + w * 2 + 8, H = Math.max(h * S, h * 3 + 30) + PAD * 2;
+// Layout: [enlarged sprite] [gap] [1x, 2x and 4x copies on a dark game-like background]
+const W = w * S + PAD * 3 + w * 4 + 8, H = Math.max(h * S, h * 7 + 40) + PAD * 2;
 const out = new Uint8Array(W * H * 4);
 const put = (x, y, c) => { if (x < 0 || y < 0 || x >= W || y >= H) return; const o = (y * W + x) * 4; out[o] = c[0]; out[o + 1] = c[1]; out[o + 2] = c[2]; out[o + 3] = 255; };
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) put(x, y, [22, 19, 38]);
@@ -37,9 +37,9 @@ if (overlay) {
   const px = PAD + spec.pivot.x * S, py = PAD + spec.pivot.y * S;
   line(px - 8, py - 1, px + 8, py + 1, [255, 0, 255]); line(px - 1, py - 8, px + 1, py + 8, [255, 0, 255]);
 }
-// 1x and 2x game-size copies
+// 1x, 2x and 4x game-size copies
 const gx = PAD * 2 + w * S + PAD;
-for (const [k, oy] of [[1, PAD], [2, PAD + h + 12]]) {
+for (const [k, oy] of [[1, PAD], [2, PAD + h + 12], [4, PAD + h * 3 + 24]]) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const o = (y * w + x) * 4;
     if (!rgba[o + 3]) continue;

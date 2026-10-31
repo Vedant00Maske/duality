@@ -8,7 +8,9 @@
     <meta property="og:title" content="DUALITY — co-op elemental puzzle platformer" />
     <meta property="og:description" content="Two players, two devices, one shared puzzle world. Create a room, share the code, and link up." />
     <meta property="og:image" content="/cover.png" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="96x96" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
@@ -24,37 +26,49 @@
     </div>
 
     <main id="ui">
-      <!-- HOME -->
+      <!-- HOME: main menu, then the play panel (name + create/join) -->
       <section id="screen-home" class="screen" hidden>
         <div class="home-card">
+          <div class="hero-pair" aria-hidden="true">
+            <span class="hero hero-ember"></span>
+            <span class="hero-link"></span>
+            <span class="hero hero-tide"></span>
+          </div>
           <h1 class="logo" aria-label="Duality"><span class="e">DUAL</span><span class="t">ITY</span></h1>
           <p class="tagline">Two elements. Two devices. One <b>Resonance Link</b>.</p>
-          <p class="sub">A co-op puzzle platformer for exactly 2 players. Ember walks through fire, Tide through water — and the energy tether between you powers the world.</p>
 
-          <label class="field">
-            <span>Your name</span>
-            <input id="name-input" maxlength="16" autocomplete="nickname" placeholder="Player" />
-          </label>
+          <nav id="home-menu" class="home-menu" aria-label="Main menu">
+            <button id="btn-play" class="btn btn-primary btn-lg">Play</button>
+            <button class="btn btn-secondary" data-open="howto">How to Play</button>
+            <button class="btn btn-secondary" data-open="settings">Settings</button>
+            <button class="btn btn-ghost" data-open="credits">Credits</button>
+            <ul class="facts">
+              <li><b>2 players</b> · each on their own device</li>
+              <li><b>12 levels</b> · 4 worlds · ~3–6 min each</li>
+              <li><b>No sign-up</b>, no install · keyboard or touch</li>
+            </ul>
+          </nav>
 
-          <div class="home-actions">
-            <button id="btn-create" class="btn btn-primary btn-lg">Create room</button>
-            <div class="join-row">
-              <input id="code-input" class="code-input" maxlength="5" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Room code" />
-              <button id="btn-join" class="btn btn-secondary btn-lg">Join</button>
+          <div id="home-play" class="home-play" hidden>
+            <p class="sub">A co-op puzzle platformer for exactly 2 players. One of you creates a room and shares the code; the other joins with it.</p>
+            <label class="field">
+              <span>Your name</span>
+              <input id="name-input" maxlength="16" autocomplete="nickname" placeholder="Player" />
+            </label>
+            <div class="home-actions">
+              <button id="btn-create" class="btn btn-primary btn-lg">Create room</button>
+              <div class="join-row">
+                <input id="code-input" class="code-input" maxlength="5" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Room code" />
+                <button id="btn-join" class="btn btn-secondary btn-lg">Join</button>
+              </div>
+              <p id="home-error" class="form-error" role="alert" hidden></p>
             </div>
-            <p id="home-error" class="form-error" role="alert" hidden></p>
+            <div class="home-links">
+              <button class="link" id="btn-menu-back">← Main menu</button>
+              <span>·</span>
+              <button class="link" data-open="howto">How to play</button>
+            </div>
           </div>
-
-          <div class="home-links">
-            <button class="link" data-open="howto">How to play</button>
-            <span>·</span>
-            <button class="link" data-open="settings">Settings</button>
-          </div>
-          <ul class="facts">
-            <li><b>2 players</b> · each on their own device</li>
-            <li><b>12 levels</b> · 4 worlds · ~3–6 min each</li>
-            <li><b>No sign-up</b>, no install · keyboard or touch</li>
-          </ul>
         </div>
       </section>
 
@@ -120,6 +134,7 @@
             <div class="hud-chip" title="Level time"><span class="ico">⏱</span><span id="hud-time">0:00</span></div>
             <div class="hud-chip" title="Deaths"><span class="ico">✖</span><span id="hud-deaths">0</span></div>
             <div class="hud-chip hud-net" id="hud-net" title="Connection"><span class="dot"></span><span id="hud-ping">—</span></div>
+            <button id="btn-mute" class="btn-icon" aria-label="Mute audio" aria-pressed="false">🔊</button>
             <button id="btn-pause" class="btn-icon" aria-label="Pause menu"><svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true"><rect x="1" y="1" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="9" y="1" width="4" height="14" rx="1.5" fill="currentColor"/></svg></button>
           </div>
         </div>
@@ -174,7 +189,10 @@
       </div>
 
       <div id="overlay-results" class="overlay" hidden>
-        <div class="panel results">
+        <div class="panel results" id="results-panel">
+          <div class="victory-scene" aria-hidden="true">
+            <span class="hero hero-ember"></span><span class="hero-link"></span><span class="hero hero-tide"></span>
+          </div>
           <div class="results-kicker" id="results-kicker">Level complete</div>
           <h2 id="results-title">—</h2>
           <div class="stars" id="results-stars"><span>★</span><span>★</span><span>★</span></div>
@@ -189,6 +207,7 @@
             <button class="btn btn-secondary" id="btn-vote-replay">Replay</button>
             <button class="btn btn-primary" id="btn-vote-next">Next level</button>
           </div>
+          <div class="victory-extra"><button class="btn btn-ghost btn-sm" data-open="credits">Credits</button></div>
           <p class="vote-status" id="vote-status"></p>
         </div>
       </div>
@@ -242,14 +261,34 @@
           <div class="settings">
             <label class="setting"><span>Music</span><input type="range" id="set-music" min="0" max="100" /></label>
             <label class="setting"><span>Sound effects</span><input type="range" id="set-sfx" min="0" max="100" /></label>
+            <label class="setting check"><input type="checkbox" id="set-mute" /><span>Mute all audio</span></label>
             <label class="setting"><span>Touch controls</span>
               <select id="set-touch"><option value="auto">Auto</option><option value="on">Always on</option><option value="off">Off</option></select>
             </label>
             <label class="setting"><span>Character art</span>
-              <select id="set-art"><option value="classic">Classic</option><option value="sprites">Sprite sheets (placeholder test)</option></select>
+              <select id="set-art"><option value="sprites">Pixel art</option><option value="classic">Classic (smooth fallback)</option></select>
             </label>
             <label class="setting check"><input type="checkbox" id="set-motion" /><span>Reduce motion (less shake &amp; particles)</span></label>
             <label class="setting check"><input type="checkbox" id="set-debug" /><span>Show debug overlay (FPS, ping, hitboxes)</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-credits" class="overlay modal" hidden>
+        <div class="panel">
+          <button class="btn-close" data-close aria-label="Close">✕</button>
+          <h2>Credits</h2>
+          <div class="credits">
+            <div class="hero-pair small" aria-hidden="true"><span class="hero hero-ember"></span><span class="hero-link"></span><span class="hero hero-tide"></span></div>
+            <p><b>DUALITY</b> — an online co-op elemental puzzle platformer.</p>
+            <dl>
+              <dt>Game, code &amp; level design</dt><dd>Vedant00Maske</dd>
+              <dt>Pixel art</dt><dd>Original, generated by the project's own art tools (<code>tools/art</code>)</dd>
+              <dt>Music &amp; sound</dt><dd>Original, synthesised live in the browser with Web Audio</dd>
+              <dt>Built with</dt><dd>Phaser 3 · Colyseus · TypeScript · Vite</dd>
+              <dt>Fonts</dt><dd>Fredoka &amp; Nunito (SIL Open Font License)</dd>
+            </dl>
+            <p class="muted small">Inspired by the co-op elemental platformer genre. All characters, art, levels and audio are original.</p>
           </div>
         </div>
       </div>

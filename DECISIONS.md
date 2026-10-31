@@ -34,3 +34,14 @@ Places where the build intentionally differs from the technical blueprint (`game
 - Colour filters (blueprint level 8) were replaced by a prism plus element-restricted mirrors, so each player owns one beam branch.
 - Mirrors and levers can be element-restricted (orange or blue rings), which keeps "both players contribute" true by construction.
 - Looping lifts pause 0.75 s at each end, and wind zones disable the variable-jump "jump-cut" gravity. Both came out of bot playtests.
+
+
+## Final production pass
+
+- **Generated pixel art instead of hand-painted files.** Characters, tilesets, liquids, backgrounds, objects and icons all come from scripts in `tools/art`. Each script validates its own output (hard alpha, sizes, seamless wraps, hazard rows), so the art is reproducible and checked by tests.
+- **Terrain is composed once per level.** A 16-tile neighbour mask, deep fills and corner overlays are drawn into a single canvas at 1:1 world scale. That costs one texture and one draw call, and keeps collision geometry the only source of truth.
+- **Lazy world loading with a procedural fallback.** World 1 loads at boot; other worlds load when needed, and the next world is prefetched. The view upgrades in place when files arrive, and the old canvas painter remains as the fallback.
+- **Tintable greyscale parts** keep all six wiring colours correct from a single atlas.
+- **Pixel-safe motion:** saws spin through pre-drawn frames, mirrors snap between five drawn angles, and emitters and fans rotate only in 90° steps. No sprite is rotated by an arbitrary angle.
+- **Music is sequenced, not streamed.** A look-ahead scheduler on the AudioContext clock gives seamless loops, fades in and out, never stacks tracks, and adds 0 bytes of download.
+- **No protocol changes.** All new visual and audio feedback (link pulses, receiver charge-up, interact animation) is derived on the client from existing replicated state.

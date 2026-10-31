@@ -949,7 +949,7 @@
  ],
  "meta": {
   "app": "https://www.aseprite.org/",
-  "version": "duality-placeholder-1",
+  "version": "duality-ember-1",
   "image": "ember.png",
   "format": "RGBA8888",
   "size": {
@@ -1024,7 +1024,7 @@
   ],
   "layers": [
    {
-    "name": "placeholder",
+    "name": "ember",
     "opacity": 255,
     "blendMode": "normal"
    }

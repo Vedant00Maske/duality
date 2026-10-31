@@ -17,6 +17,7 @@ async function player(name, viewport = { width: 1280, height: 720 }) {
   page.on('pageerror', (e) => errors.push(`[${name}] pageerror ${e.message}`));
   await page.goto(BASE);
   await page.waitForSelector('#screen-home:not([hidden])', { timeout: 15000 });
+  await page.evaluate(() => window.__duality.ui?.openPlay?.());
   await page.fill('#name-input', name);
   return page;
 }

@@ -7,9 +7,15 @@ export interface Settings {
   touch: 'auto' | 'on' | 'off';
   reducedMotion: boolean;
   debug: boolean;
-  /** 'classic' = procedural characters; 'sprites' = sprite-sheet pipeline (placeholder art for now). */
+  /** 'sprites' = pixel-art sprite sheets (default); 'classic' = procedural fallback. */
   charArt: 'classic' | 'sprites';
+  /** Mutes all audio without losing the volume levels. */
+  mute: boolean;
+  /** Bumped when a default changes in a way that should override stale saved values. */
+  settingsVersion: number;
 }
+
+const SETTINGS_VERSION = 2;
 
 const KEY = 'duality.settings.v1';
 const PROGRESS_KEY = 'duality.progress.v1';
@@ -21,7 +27,9 @@ const defaults: Settings = {
   touch: 'auto',
   reducedMotion: typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches,
   debug: false,
-  charArt: 'classic',
+  charArt: 'sprites',
+  mute: false,
+  settingsVersion: SETTINGS_VERSION,
 };
 
 function read<T>(key: string, fallback: T): T {
@@ -42,6 +50,12 @@ function write(key: string, value: unknown): void {
 }
 
 export const settings: Settings = read(KEY, defaults);
+// v1 saved charArt:'classic' implicitly (it was the default); move everyone to the final pixel art once.
+if (settings.settingsVersion !== SETTINGS_VERSION) {
+  settings.charArt = 'sprites';
+  settings.settingsVersion = SETTINGS_VERSION;
+  write(KEY, settings);
+}
 
 // `?art=sprites` / `?art=classic` switches character rendering (handy for testing).
 try {

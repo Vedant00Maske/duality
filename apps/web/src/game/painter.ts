@@ -4,6 +4,7 @@
 import { type CompiledLevel, TILE, Tile, isBlockingTile, tileAt } from '@duality/shared';
 import type { Palette } from './textures';
 import { roundRect } from './textures';
+import { LIQUID_SHEET, TILESET } from '../art/environment';
 
 function hash(x: number, y: number, s = 0): number {
   let h = (x * 374761393 + y * 668265263 + s * 2147483647) | 0;
@@ -145,6 +146,94 @@ export function paintTerrain(level: CompiledLevel, pal: Palette, scale: number):
     }
   }
   return c;
+}
+
+type Img = CanvasImageSource;
+
+/**
+ * Pixel-art terrain composed from a world tileset (see art/environment.ts for
+ * the layout). Drawn once per level at 1:1 world scale; it is purely visual and
+ * mirrors the collision grid tile for tile.
+ */
+export function paintTiledTerrain(
+  level: CompiledLevel, tiles: Img, liquids: Record<number, Img>, avoid: Array<{ x: number; y: number; w: number; h: number }>,
+): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = level.widthPx;
+  c.height = level.heightPx;
+  const g = c.getContext('2d')!;
+  g.imageSmoothingEnabled = false;
+  const blit = (i: number, x: number, y: number) =>
+    g.drawImage(tiles, (i % TILESET.cols) * TILE, Math.floor(i / TILESET.cols) * TILE, TILE, TILE, x, y, TILE, TILE);
+  const solid = (cc: number, rr: number) => isBlockingTile(tileAt(level, cc, rr));
+  const depth = depthField(level);
+  // Decor never covers puzzle objects, signs or spawn points.
+  const free = (cc: number, rr: number) => {
+    const x = cc * TILE, y = rr * TILE;
+    return !avoid.some((o) => o.x < x + TILE && o.x + o.w > x && o.y < y + TILE && o.y + o.h > y);
+  };
+
+  for (let r = 0; r < level.rows; r++) {
+    for (let cc = 0; cc < level.cols; cc++) {
+      const t = tileAt(level, cc, r);
+      const x = cc * TILE, y = r * TILE;
+      if (t === Tile.Solid) {
+        const mask = (solid(cc, r - 1) ? 0 : 1) | (solid(cc + 1, r) ? 0 : 2) | (solid(cc, r + 1) ? 0 : 4) | (solid(cc - 1, r) ? 0 : 8);
+        if (mask === 0 && depth[r * level.cols + cc] >= 3) {
+          const h = hash(cc, r, 41);
+          blit(h < 0.1 ? TILESET.deep[2] : h < 0.55 ? TILESET.deep[0] : TILESET.deep[1], x, y);
+        } else blit(mask, x, y);
+        // Concave corners: both orthogonal neighbours solid, the diagonal open.
+        if (!(mask & 1) && !(mask & 2) && !solid(cc + 1, r - 1)) blit(TILESET.inner[0], x, y);
+        if (!(mask & 1) && !(mask & 8) && !solid(cc - 1, r - 1)) blit(TILESET.inner[1], x, y);
+        if (!(mask & 4) && !(mask & 2) && !solid(cc + 1, r + 1)) blit(TILESET.inner[2], x, y);
+        if (!(mask & 4) && !(mask & 8) && !solid(cc - 1, r + 1)) blit(TILESET.inner[3], x, y);
+      } else if (isLiquid(t)) {
+        const src = liquids[t];
+        g.drawImage(src, hash(cc, r, 5) < 0.5 ? 0 : TILE, LIQUID_SHEET.basinY, TILE, TILE, x, y, TILE, TILE);
+      } else if (t === Tile.OneWay) {
+        const lt = tileAt(level, cc - 1, r) === Tile.OneWay, rt = tileAt(level, cc + 1, r) === Tile.OneWay;
+        if (lt || rt) blit(TILESET.oneWay[lt ? (rt ? 1 : 2) : 0], x, y);
+        else { // single-tile ledge: rounded at both ends
+          g.drawImage(tiles, (TILESET.oneWay[0] % TILESET.cols) * TILE, Math.floor(TILESET.oneWay[0] / TILESET.cols) * TILE, TILE / 2, TILE, x, y, TILE / 2, TILE);
+          g.drawImage(tiles, (TILESET.oneWay[2] % TILESET.cols) * TILE + TILE / 2, Math.floor(TILESET.oneWay[2] / TILESET.cols) * TILE, TILE / 2, TILE, x + TILE / 2, y, TILE / 2, TILE);
+        }
+      } else if (t === Tile.Spikes) {
+        blit(TILESET.spikes, x, y);
+      } else if (t === Tile.Empty && free(cc, r)) {
+        if (tileAt(level, cc, r + 1) === Tile.Solid && r + 1 < level.rows) {
+          const h = hash(cc, r, 61);
+          if (h < 0.24) blit(TILESET.decor[Math.floor(h / 0.08)], x, y);
+        } else if (tileAt(level, cc, r - 1) === Tile.Solid && r > 0) {
+          const h = hash(cc, r, 67);
+          if (h < 0.16) blit(TILESET.hanging[h < 0.08 ? 0 : 1], x, y);
+        }
+      }
+    }
+  }
+  return c;
+}
+
+/** Tiles to the nearest non-blocking tile (0 for open tiles). */
+function depthField(level: CompiledLevel): Uint8Array {
+  const depth = new Uint8Array(level.cols * level.rows).fill(255);
+  const q: number[] = [];
+  for (let r = 0; r < level.rows; r++) {
+    for (let cc = 0; cc < level.cols; cc++) {
+      if (!isBlockingTile(tileAt(level, cc, r))) { depth[r * level.cols + cc] = 0; q.push(r * level.cols + cc); }
+    }
+  }
+  for (let head = 0; head < q.length; head++) {
+    const i = q[head];
+    const r = Math.floor(i / level.cols), cc = i % level.cols;
+    for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nc = cc + dc, nr = r + dr;
+      if (nc < 0 || nr < 0 || nc >= level.cols || nr >= level.rows) continue;
+      const ni = nr * level.cols + nc;
+      if (depth[ni] > depth[i] + 1) { depth[ni] = depth[i] + 1; q.push(ni); }
+    }
+  }
+  return depth;
 }
 
 function isLiquid(t: number): boolean {

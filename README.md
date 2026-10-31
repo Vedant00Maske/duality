@@ -38,13 +38,42 @@ Production URLs must use HTTPS. The client then connects over `wss://` on the sa
 ## Tests
 
 ```bash
-npm test                 # physics, determinism, rollback, 12 level solutions, live room integration (42 tests)
+npm test                 # physics, determinism, rollback, 12 level solutions, room integration, asset audits (48 tests)
 npm run validate-levels  # schema + reference validation for every level
 npm run typecheck
 npm run e2e              # two real browser windows (needs Microsoft Edge; run `npm run dev` first)
+node tests/e2e/ui.mjs                 # menus, rooms, settings, audio, 5 viewport sizes (62 checks)
+node tests/e2e/levels.mjs             # screenshots all 12 levels, asserts pixel-art environment loads
+node tests/e2e/animations.mjs [--as tide]   # all 9 animations per character on both clients
+PORT=3001 COLYSEUS_LATENCY=120 npm start & node tests/e2e/latency.mjs http://localhost:3001
 ```
 
 Each level has a scripted reference solution (`tests/solutions.ts`). The tests play it through the real simulation and fail if anyone dies, the level can't be finished, or the run takes longer than par. So no level ships with an impossible jump or a softlock.
+
+## Art and audio pipeline
+
+All art is original pixel art produced by deterministic generators, so it can be regenerated and re-validated at any time:
+
+```bash
+node tools/art/char-anims.mjs all     # Ember + Tide: 9 animations, 43 frames each -> art-src/<name>/final
+node tools/art/export-characters.mjs  # copy validated atlases into apps/web/src/art/characters
+node tools/art/worlds.mjs             # 4 tilesets, 3 animated liquids, 12 parallax backgrounds (+ validation.json)
+node tools/art/objects.mjs            # interactive-object atlas (greyscale parts are tinted with the 6 wiring colours)
+node tools/art/branding.mjs           # favicon + touch icon
+npm run asset-audit                   # character sheet audit (frames, alpha, baseline, palette, timing)
+node tools/cover/capture.mjs && node tools/cover/render.mjs   # 1200x630 cover from real gameplay
+```
+
+World art is loaded lazily per world (World 1 at boot, the next world prefetched). If any file fails to load, the renderer falls back to the procedural painter. Music is four composed loops played by a look-ahead WebAudio sequencer, so there are no audio downloads.
+
+Production build sizes (gzip/PNG): JS + CSS ≈ 455 KB; initial images ≈ 60 KB; each further world ≈ 15–37 KB. Total ≈ 0.6 MB.
+
+## Troubleshooting
+
+- **Room code not found:** rooms close when both players leave. Create a new room.
+- **No sound:** browsers start audio only after a click or tap. Also check *Settings → Mute* and the HUD speaker button.
+- **Blurry or uneven pixels:** use the default *Pixel art* character setting. The gameplay camera then uses whole-number zoom.
+- **Render build fails:** the build command must be `npm ci --include=dev && npm run build`, as in `render.yaml`.
 
 ## Architecture
 

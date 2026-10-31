@@ -9,7 +9,8 @@ import {
 } from '@duality/shared';
 import { COLORS, HUES, CHAR_W, CHAR_H, PALETTES, type Palette } from './textures';
 import { ANIM_LOOPS, SHEET_KEY, type CharAnim } from '../art/characters';
-import { paintParallax, paintSky, paintTerrain } from './painter';
+import { paintParallax, paintSky, paintTerrain, paintTiledTerrain } from './painter';
+import { BG_LAYERS, LIQUIDS, LIQUID_SHEET, bgKey, liquidKey, tilesKey } from '../art/environment';
 import type { Predictor, Vec2 } from './predictor';
 import { sfx, setLinkHum } from '../audio/sfx';
 import { settings } from '../settings';
@@ -43,8 +44,14 @@ interface CharView {
   lookX: number;
 }
 
+type ArtPart = Phaser.GameObjects.Image | Phaser.GameObjects.TileSprite | Phaser.GameObjects.Container;
+const OBJ_ATLAS = 'objects';
+
 interface ObjView {
   def: ObjDef;
+  /** Pixel-art parts (object atlas); absent when the procedural fallback draws the object. */
+  sp?: Record<string, ArtPart>;
+  changedAt: number;
   g?: Phaser.GameObjects.Graphics;
   img?: Phaser.GameObjects.Image;
   glow?: Phaser.GameObjects.Image;
@@ -57,21 +64,34 @@ interface ObjView {
   prevS: number;
 }
 
+interface Ring { x: number; y: number; r0: number; r1: number; t: number; life: number; color: number; width: number }
+
 const tmpA: Vec2 = { x: 0, y: 0 };
 const tmpB: Vec2 = { x: 0, y: 0 };
 
 export class LevelView {
   readonly pal: Palette;
   private layers: Phaser.GameObjects.GameObject[] = [];
-  private sky: Phaser.GameObjects.Image;
+  /** Procedural fallback backdrop (used until the world's pixel art has loaded). */
+  private sky: Phaser.GameObjects.Image | null = null;
   private para: Phaser.GameObjects.TileSprite[] = [];
+  /** Pixel-art parallax layers with horizontal and vertical parallax factors. */
+  private bgLayers: Array<{ ts: Phaser.GameObjects.TileSprite; fx: number; fy: number }> = [];
+  /** Objects owned by the environment (rebuilt when world art arrives). */
+  private env: Phaser.GameObjects.GameObject[] = [];
+  /** True when terrain/backdrop use the world's pixel-art assets. */
+  pixelEnv = false;
+  readonly world: number;
+  /** Object atlas loaded: puzzle objects use pixel art. */
+  readonly objArt: boolean;
+  private snapZ = 1;
   private objViews: ObjView[] = [];
   private chars: CharView[] = [];
   private beamG: Phaser.GameObjects.Graphics;
   private linkG: Phaser.GameObjects.Graphics;
   private fxG: Phaser.GameObjects.Graphics;
   private debugG: Phaser.GameObjects.Graphics;
-  private surfaces: Phaser.GameObjects.TileSprite[] = [];
+  private surfaces: Array<{ ts: Phaser.GameObjects.TileSprite; speed: number; frames: string[] | null }> = [];
   private burst: Phaser.GameObjects.Particles.ParticleEmitter;
   private motes: Phaser.GameObjects.Particles.ParticleEmitter;
   private promptText: Phaser.GameObjects.Text;
@@ -80,25 +100,27 @@ export class LevelView {
   private nearestSign = -1;
   private linkLevel = 0;
   private time = 0;
+  /** Fixed pool of expanding/contracting rings (link pulses, receivers, landings). */
+  private rings: Ring[] = Array.from({ length: 24 }, () => ({ x: 0, y: 0, r0: 0, r1: 0, t: 1, life: 1, color: 0xffffff, width: 2 }));
+  private ringG!: Phaser.GameObjects.Graphics;
+  /** 0..1 progress of the activation "zip" travelling Ember -> Tide; -1 when idle. */
+  private zip = -1;
+  /** Snap-back after the link breaks: endpoints and remaining time. */
+  private snapT = 0;
+  private snapA = { x: 0, y: 0 };
+  private snapB = { x: 0, y: 0 };
+  private stepDist = [0, 0];
   partnerName = '';
 
   constructor(private scene: Phaser.Scene, readonly level: CompiledLevel, readonly local: number, private art: CharArtMode = 'classic') {
     const world = Math.max(1, Math.min(4, level.def.world));
+    this.world = world;
     this.pal = PALETTES[world - 1];
+    this.objArt = scene.textures.exists(OBJ_ATLAS);
     const W = level.widthPx, H = level.heightPx;
     const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => { this.layers.push(o); return o; };
 
-    // Background: sky gradient + two parallax layers (fixed to the camera).
-    const skyKey = `sky-${world}`;
-    if (!scene.textures.exists(skyKey)) scene.textures.addCanvas(skyKey, paintSky(this.pal));
-    this.sky = add(scene.add.image(0, 0, skyKey).setOrigin(0).setScrollFactor(0).setDepth(-100));
-    for (const layer of [0, 1] as const) {
-      const key = `para-${world}-${layer}`;
-      if (!scene.textures.exists(key)) scene.textures.addCanvas(key, paintParallax(this.pal, world, layer));
-      const ts = add(scene.add.tileSprite(0, 0, 1024, 576, key).setOrigin(0).setScrollFactor(0).setDepth(-90 + layer));
-      ts.setAlpha(layer === 0 ? 0.9 : 1);
-      this.para.push(ts);
-    }
+    this.buildEnvironment();
 
     // Ambient motes
     this.motes = add(scene.add.particles(0, 0, 'dot', {
@@ -107,34 +129,6 @@ export class LevelView {
       scale: { start: 0.35, end: 0 }, alpha: { start: 0.6, end: 0 }, tint: this.pal.mote,
       frequency: settings.reducedMotion ? 600 : 160, blendMode: 'ADD', maxParticles: 60,
     }).setDepth(-50));
-
-    // Terrain: one texture for the whole level.
-    const scale = Math.min(2, 4096 / Math.max(W, H));
-    const tkey = `terrain-${level.id}`;
-    if (scene.textures.exists(tkey)) scene.textures.remove(tkey);
-    scene.textures.addCanvas(tkey, paintTerrain(level, this.pal, scale));
-    add(scene.add.image(0, 0, tkey).setOrigin(0).setScale(1 / scale).setDepth(0));
-
-    // Animated liquid surfaces, one TileSprite per horizontal run.
-    for (let r = 0; r < level.rows; r++) {
-      let c = 0;
-      while (c < level.cols) {
-        const t = tileAt(level, c, r);
-        if (t === Tile.Lava || t === Tile.Water || t === Tile.Toxic) {
-          let e = c;
-          while (e + 1 < level.cols && tileAt(level, e + 1, r) === t) e++;
-          const key = t === Tile.Lava ? 'lava' : t === Tile.Water ? 'water' : 'toxic';
-          const s = add(scene.add.tileSprite(c * TILE, r * TILE - 5, (e - c + 1) * TILE, 12, `surf-${key}`).setOrigin(0).setDepth(6));
-          s.setData('speed', key === 'lava' ? 12 : key === 'water' ? 22 : 16);
-          this.surfaces.push(s);
-          if (key !== 'water') {
-            const gl = add(scene.add.image((c + e + 1) * TILE / 2, r * TILE, 'glow').setDepth(5).setBlendMode('ADD'));
-            gl.setDisplaySize((e - c + 1) * TILE * 1.3, 70).setTint(key === 'lava' ? 0xff7a2a : 0x7dde4a).setAlpha(0.35);
-          }
-          c = e + 1;
-        } else c++;
-      }
-    }
 
     // Static decoration graphics (tracks).
     const deco = add(scene.add.graphics().setDepth(1));
@@ -158,6 +152,7 @@ export class LevelView {
     this.beamG = add(scene.add.graphics().setDepth(14).setBlendMode('ADD'));
     this.linkG = add(scene.add.graphics().setDepth(19).setBlendMode('ADD'));
     this.fxG = add(scene.add.graphics().setDepth(40));
+    this.ringG = add(scene.add.graphics().setDepth(18).setBlendMode('ADD'));
     this.debugG = add(scene.add.graphics().setDepth(60));
 
     for (let i = 0; i < 2; i++) this.chars.push(this.createChar(i));
@@ -173,10 +168,95 @@ export class LevelView {
     }).setOrigin(0.5, 1).setDepth(45).setVisible(false));
   }
 
+  /** World art is ready for this view's world (tileset, three backdrops, liquids). */
+  private worldArtReady(): boolean {
+    const t = this.scene.textures;
+    return t.exists(tilesKey(this.world)) && BG_LAYERS.every((l) => t.exists(bgKey(this.world, l))) && LIQUIDS.every((n) => t.exists(liquidKey(n)));
+  }
+
+  /** Swap the procedural fallback for pixel art once the world's assets have loaded. */
+  upgradeEnvironment(): void {
+    if (this.pixelEnv || !this.worldArtReady()) return;
+    for (const o of this.env) o.destroy();
+    this.env = [];
+    this.sky = null;
+    this.para = [];
+    this.bgLayers = [];
+    this.surfaces = [];
+    this.buildEnvironment();
+  }
+
+  private buildEnvironment(): void {
+    const scene = this.scene, level = this.level, world = this.world;
+    const add = <T extends Phaser.GameObjects.GameObject>(o: T): T => { this.env.push(o); return o; };
+    this.pixelEnv = this.worldArtReady();
+    const tkey = `terrain-${level.id}`;
+    if (scene.textures.exists(tkey)) scene.textures.remove(tkey);
+
+    if (this.pixelEnv) {
+      // Pixel-art backdrop: three seamless 1024x576 layers fixed to the camera.
+      BG_LAYERS.forEach((layer, k) => {
+        const ts = add(scene.add.tileSprite(0, 0, 1024, 576, bgKey(world, layer)).setOrigin(0).setScrollFactor(0).setDepth(-100 + k));
+        this.bgLayers.push({ ts, fx: [0.03, 0.15, 0.35][k], fy: [0.3, 0.6, 1][k] });
+      });
+      // Terrain composed from the tileset, 1:1 with the collision grid.
+      const src = (key: string) => scene.textures.get(key).getSourceImage() as CanvasImageSource;
+      const avoid = level.objects.map((o) => ({ x: o.x, y: o.y, w: o.w, h: o.h }));
+      for (const sp of level.spawns) avoid.push({ x: sp.x - 8, y: sp.y - 8, w: BW + 16, h: BH + 8 });
+      const canvas = paintTiledTerrain(level, src(tilesKey(world)), {
+        [Tile.Lava]: src(liquidKey('lava')), [Tile.Water]: src(liquidKey('water')), [Tile.Toxic]: src(liquidKey('toxic')),
+      }, avoid);
+      scene.textures.addCanvas(tkey, canvas)?.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      add(scene.add.image(0, 0, tkey).setOrigin(0).setDepth(0));
+    } else {
+      // Procedural fallback: sky gradient + two parallax layers.
+      const skyKey = `sky-${world}`;
+      if (!scene.textures.exists(skyKey)) scene.textures.addCanvas(skyKey, paintSky(this.pal));
+      this.sky = add(scene.add.image(0, 0, skyKey).setOrigin(0).setScrollFactor(0).setDepth(-100));
+      for (const layer of [0, 1] as const) {
+        const key = `para-${world}-${layer}`;
+        if (!scene.textures.exists(key)) scene.textures.addCanvas(key, paintParallax(this.pal, world, layer));
+        const ts = add(scene.add.tileSprite(0, 0, 1024, 576, key).setOrigin(0).setScrollFactor(0).setDepth(-90 + layer));
+        ts.setAlpha(layer === 0 ? 0.9 : 1);
+        this.para.push(ts);
+      }
+      const scale = Math.min(2, 4096 / Math.max(level.widthPx, level.heightPx));
+      scene.textures.addCanvas(tkey, paintTerrain(level, this.pal, scale));
+      add(scene.add.image(0, 0, tkey).setOrigin(0).setScale(1 / scale).setDepth(0));
+    }
+
+    // Animated liquid surfaces: one strip per horizontal run, only on a pool's top row.
+    for (let r = 0; r < level.rows; r++) {
+      let c = 0;
+      while (c < level.cols) {
+        const t = tileAt(level, c, r);
+        if ((t === Tile.Lava || t === Tile.Water || t === Tile.Toxic) && tileAt(level, c, r - 1) !== t) {
+          let e = c;
+          while (e + 1 < level.cols && tileAt(level, e + 1, r) === t && tileAt(level, e + 1, r - 1) !== t) e++;
+          const key = t === Tile.Lava ? 'lava' : t === Tile.Water ? 'water' : 'toxic';
+          const speed = key === 'lava' ? 12 : key === 'water' ? 22 : 16;
+          const w = (e - c + 1) * TILE;
+          const ts = this.pixelEnv
+            ? add(scene.add.tileSprite(c * TILE, r * TILE + LIQUID_SHEET.surfaceOffsetY, w, LIQUID_SHEET.surfaceH, liquidKey(key), 'surf0').setOrigin(0).setDepth(6))
+            : add(scene.add.tileSprite(c * TILE, r * TILE - 5, w, 12, `surf-${key}`).setOrigin(0).setDepth(6));
+          this.surfaces.push({ ts, speed, frames: this.pixelEnv ? ['surf0', 'surf1', 'surf2', 'surf3'] : null });
+          if (key !== 'water') {
+            const gl = add(scene.add.image((c + e + 1) * TILE / 2, r * TILE, 'glow').setDepth(5).setBlendMode('ADD'));
+            gl.setDisplaySize(w * 1.3, 70).setTint(key === 'lava' ? 0xff7a2a : 0x7dde4a).setAlpha(0.35);
+          }
+          c = e + 1;
+        } else c++;
+      }
+    }
+  }
+
   destroy(): void {
+    for (const o of this.env) o.destroy();
+    this.env = [];
     for (const o of this.layers) o.destroy();
     for (const v of this.objViews) {
       v.g?.destroy(); v.img?.destroy(); v.glow?.destroy(); v.tile?.destroy(); v.text?.destroy(); v.emitter?.destroy();
+      if (v.sp) for (const part of Object.values(v.sp)) part.destroy();
     }
     this.destroyChars();
     setLinkHum(0);
@@ -263,7 +343,7 @@ export class LevelView {
 
   private createObj(o: ObjDef): ObjView {
     const s = this.scene;
-    const v: ObjView = { def: o, last: '', anim: 0, sfxAt: 0, prevS: -1 };
+    const v: ObjView = { def: o, last: '', anim: 0, sfxAt: 0, prevS: -1, changedAt: -1 };
     const hue = HUES[o.hue % HUES.length];
     switch (o.type) {
       case 'crate':
@@ -331,7 +411,133 @@ export class LevelView {
         if (o.type === 'field') v.glow = s.add.image(o.x + o.w / 2, o.y + o.h / 2, 'glow').setBlendMode('ADD').setTint(0xa6c8ff).setDisplaySize(o.w * 2, o.h * 1.5).setAlpha(0).setDepth(8);
         if (o.type === 'emitter') v.glow = s.add.image(o.x + o.w / 2, o.y + o.h / 2, 'glow').setBlendMode('ADD').setTint(0xffe9a8).setDisplaySize(70, 70).setAlpha(0).setDepth(8);
     }
+    if (this.objArt) this.addObjArt(o, v);
     return v;
+  }
+
+  /**
+   * Pixel-art parts for an object. Greyscale "_g" frames are tinted with the
+   * object's wiring colour, so plates, levers and receivers always match the
+   * doors they drive. Sizes come from the object's simulation bounds.
+   */
+  private addObjArt(o: ObjDef, v: ObjView): void {
+    const s = this.scene, K = OBJ_ATLAS;
+    const hue = HUES[o.hue % HUES.length];
+    const cx = o.x + o.w / 2, by = o.y + o.h;
+    const img = (x: number, y: number, f: string, depth: number) => s.add.image(x, y, K, f).setOrigin(0).setDepth(depth);
+    const sp: Record<string, ArtPart> = {};
+    switch (o.type) {
+      case 'crate': v.img!.setTexture(K, 'crate').setDisplaySize(CrateTuning.size, CrateTuning.size); return;
+      case 'saw': v.img!.setTexture(K, 'saw0').setScale(1); return;
+      case 'crystal': v.img!.setTexture(K, 'crystal').setScale(1); return;
+      case 'sign':
+        v.g!.clear();
+        v.text!.setVisible(false);
+        sp.main = img(o.x, o.y, 'sign', 3);
+        break;
+      case 'lever': {
+        const elc = o.element === 'ember' ? COLORS.ember : o.element === 'tide' ? COLORS.tide : 0x5a5170;
+        sp.base = img(cx - 12, by - 8, 'lever_base', 8);
+        sp.strip = img(cx - 9, by - 3, 'lever_strip_g', 8).setTint(elc);
+        sp.stick = img(cx - 12, by - 27, 'lever_stick0', 8);
+        sp.knob = img(cx - 12, by - 27, 'lever_knob0_g', 8).setTint(hue);
+        break;
+      }
+      case 'plate':
+        sp.base = img(o.x, by - 6, 'plate_base', 7);
+        sp.cap = img(o.x + 4, by - 9, 'plate_up_g', 7).setTint(hue);
+        break;
+      case 'door':
+        if (o.style === 'bridge') {
+          sp.main = s.add.tileSprite(o.x, o.y, o.w, o.h, K, 'bridge_on_g').setOrigin(0).setDepth(10).setTint(hue);
+        } else if (o.h >= o.w) {
+          sp.body = s.add.tileSprite(o.x, o.y, o.w, o.h, K, 'door_seg').setOrigin(0).setDepth(10);
+          sp.stripe = s.add.tileSprite(o.x, o.y, o.w, o.h, K, 'door_stripe_g').setOrigin(0).setDepth(10).setTint(hue);
+          sp.edge = img(o.x, by - 4, 'door_edge_g', 10).setTint(hue);
+        } else return; // horizontal sliding doors keep the procedural look
+        break;
+      case 'platform': {
+        const n = Math.max(1, Math.round(o.w / TILE));
+        const parts: Phaser.GameObjects.GameObject[] = [];
+        for (let k = 0; k < n; k++) parts.push(s.add.image(k * TILE, 0, K, n === 1 ? 'plat_m' : k === 0 ? 'plat_l' : k === n - 1 ? 'plat_r' : 'plat_m').setOrigin(0));
+        parts.push(s.add.tileSprite(2, 1, o.w - 4, 3, K, 'plat_stripe_g').setOrigin(0).setTint(hue));
+        sp.main = s.add.container(o.x, o.y, parts).setDepth(12);
+        break;
+      }
+      case 'fan': {
+        const horizontal = o.dir === 'left' || o.dir === 'right';
+        const len = horizontal ? o.h : o.w;
+        const ts = s.add.tileSprite(0, 0, len, 10, K, 'fan0').setOrigin(0).setDepth(8);
+        if (o.dir === 'up') ts.setPosition(o.x, by - 10);
+        else if (o.dir === 'down') ts.setPosition(o.x + o.w, o.y + 10).setAngle(180);
+        else if (o.dir === 'right') ts.setPosition(o.x + 10, o.y).setAngle(90);
+        else ts.setPosition(o.x + o.w - 10, by).setAngle(-90);
+        sp.main = ts;
+        // Wiring colour marker on the housing (static).
+        const mx = o.dir === 'left' ? o.x + o.w - 10 : o.x, my = o.dir === 'up' ? by - 10 : o.y;
+        v.g!.fillStyle(hue, 1).fillRect(mx, my, horizontal ? 2 : 6, horizontal ? 6 : 2);
+        break;
+      }
+      case 'emitter':
+        sp.main = s.add.image(o.x + TILE / 2, o.y + TILE / 2, K, 'emitter_off').setDepth(8)
+          .setAngle({ right: 0, down: 90, left: 180, up: -90 }[o.dir]);
+        break;
+      case 'mirror': {
+        const ring = o.fixed ? 0x6b5a8a : o.element === 'ember' ? COLORS.ember : o.element === 'tide' ? COLORS.tide : 0xf6e9c8;
+        sp.back = img(o.x, o.y, 'mirror_back', 8);
+        sp.ring = img(o.x, o.y, 'mirror_ring_g', 8).setTint(ring);
+        sp.plate = img(o.x, o.y, 'mirror_a0', 8);
+        break;
+      }
+      case 'prism': sp.main = img(o.x, o.y, 'prism', 8); break;
+      case 'receiver':
+        sp.base = img(o.x, o.y, 'recv_base', 8);
+        sp.ring = img(o.x, o.y, 'recv_ring_g', 8).setTint(hue);
+        sp.core = img(o.x, o.y, 'recv_core_off', 8);
+        break;
+      case 'node': sp.main = img(o.x, by - TILE, `node_${o.element === 'tide' ? 'tide' : 'ember'}_off`, 8); break;
+      case 'checkpoint':
+        sp.pole = img(cx - 9, by - 64, 'cp_pole', 8);
+        sp.flag = img(cx + 1, by - 58, 'cp_flag0_g', 8).setTint(0x5a5170);
+        break;
+      case 'exit': sp.main = img(o.x, o.y, o.h <= 64 ? 'exit64' : 'exit96', 1.5); break;
+      case 'ice': sp.main = s.add.tileSprite(o.x, o.y, o.w, o.h, K, 'ice').setOrigin(0).setDepth(9); break;
+      default: return;
+    }
+    v.sp = sp;
+  }
+
+  private snap(n: number): number {
+    return Math.round(n * this.snapZ) / this.snapZ;
+  }
+
+  /** Door/bridge sprites for open fraction p (doors retract upwards; bridges are solid below 0.5). */
+  private doorArt(v: ObjView, w: World, p: number, hue: number): void {
+    const o = v.def, sp = v.sp!;
+    if (o.style === 'bridge') {
+      const solid = p < 0.5;
+      (sp.main as Phaser.GameObjects.TileSprite).setFrame(solid ? 'bridge_on_g' : 'bridge_off_g').setAlpha(solid ? 1 : 0.55).setTint(hue);
+      return;
+    }
+    const sh = Math.round(o.h * (1 - Math.min(1, p)));
+    const body = sp.body as Phaser.GameObjects.TileSprite, stripe = sp.stripe as Phaser.GameObjects.TileSprite;
+    const visible = sh > 0;
+    for (const t of [body, stripe]) {
+      t.setVisible(visible);
+      if (visible) { t.setSize(o.w, sh); t.tilePositionY = o.h - sh; }
+    }
+    (sp.edge as Phaser.GameObjects.Image).setVisible(visible).setY(o.y + sh - 4);
+    // One lamp per input above the door frame.
+    const g = v.g!;
+    g.clear();
+    const lamps = o.sources.length;
+    for (let k = 0; k < lamps; k++) {
+      const on = w.sig[o.sources[k]] === 1;
+      const lx = o.x + o.w / 2, ly = o.y - 6 - k * 9;
+      g.fillStyle(0x0d0b17, 0.9).fillRect(lx - 4, ly - 4, 8, 8);
+      g.fillStyle(HUES[this.level.objects[o.sources[k]].hue % HUES.length], on ? 1 : 0.28).fillRect(lx - 3, ly - 3, 6, 6);
+      if (on) g.fillStyle(0xffffff, 0.8).fillRect(lx - 2, ly - 2, 2, 2);
+    }
   }
 
   private fanParticles(o: ObjDef): Phaser.Types.GameObjects.Particles.ParticleEmitterConfig {
@@ -351,6 +557,7 @@ export class LevelView {
   render(pred: Predictor, alpha: number, dtMs: number, cam: Phaser.Cameras.Scene2D.Camera, debug: boolean): void {
     const w = pred.world;
     this.lastWorld = w;
+    this.snapZ = cam.zoom;
     this.time += dtMs / 1000;
     const t = this.time;
 
@@ -360,13 +567,33 @@ export class LevelView {
     // offset them to keep the backdrop covering the whole screen at any zoom.
     const bw = cam.width / cam.zoom + 4, bh = cam.height / cam.zoom + 4;
     const bx = (cam.width - bw) / 2, by = (cam.height - bh) / 2;
-    this.sky.setPosition(bx, by).setDisplaySize(bw, bh);
-    this.para.forEach((p, i) => {
-      p.setPosition(bx, by).setSize(bw, bh);
-      p.tilePositionX = view.x * (i === 0 ? 0.15 : 0.35);
-      p.tilePositionY = view.y * (i === 0 ? 0.05 : 0.12);
-    });
-    for (const s of this.surfaces) s.tilePositionX += (s.getData('speed') as number) * dtMs / 1000;
+    if (this.sky) {
+      this.sky.setPosition(bx, by).setDisplaySize(bw, bh);
+      this.para.forEach((p, i) => {
+        p.setPosition(bx, by).setSize(bw, bh);
+        p.tilePositionX = view.x * (i === 0 ? 0.15 : 0.35);
+        p.tilePositionY = view.y * (i === 0 ? 0.05 : 0.12);
+      });
+    }
+    if (this.bgLayers.length) {
+      // Whole-number texture scale keeps backdrop pixels square; layers are bottom-anchored
+      // and spend any spare height on a little vertical parallax.
+      const k = Math.max(1, Math.ceil(bh / 576));
+      const lh = 576 * k;
+      const slack = lh - bh;
+      const viewH = cam.height / cam.zoom;
+      const vfrac = this.level.heightPx > viewH ? Phaser.Math.Clamp(view.y / (this.level.heightPx - viewH), 0, 1) : 1;
+      const z = cam.zoom;
+      for (const l of this.bgLayers) {
+        const y = by + bh - lh + slack * (1 - vfrac) * l.fy;
+        l.ts.setPosition(bx, Math.round(y * z) / z).setSize(bw, lh).setTileScale(k);
+        l.ts.tilePositionX = Math.round((view.x * l.fx) / k);
+      }
+    }
+    for (const s of this.surfaces) {
+      s.ts.tilePositionX += (s.speed * dtMs) / 1000;
+      if (s.frames) s.ts.setFrame(s.frames[Math.floor(t * 6) % 4]);
+    }
 
     // Only the nearest sign shows its bubble, so tutorial text never overlaps.
     this.nearestSign = -1;
@@ -380,7 +607,8 @@ export class LevelView {
     for (let i = 0; i < this.objViews.length; i++) this.renderObj(this.objViews[i], w, pred, alpha, t, i);
     this.renderBeams(w, t);
     for (let i = 0; i < 2; i++) this.renderChar(i, pred, alpha, dtMs, t, cam);
-    this.renderLink(pred, alpha, t);
+    this.renderLink(pred, alpha, t, dtMs / 1000);
+    this.renderRings(dtMs / 1000);
     this.renderPrompt(w, pred);
     this.renderPartnerArrow(pred, alpha, cam);
     if (debug) this.renderDebug(w); else this.debugG.clear();
@@ -394,12 +622,27 @@ export class LevelView {
     const now = this.time;
     const changed = v.prevS !== -1 && v.prevS !== st.s;
     const canSfx = changed && now - v.sfxAt > 0.25;
+    if (changed) v.changedAt = now;
     if (canSfx) v.sfxAt = now;
 
     switch (o.type) {
       case 'door': {
         const key = `${st.p.toFixed(3)}|${o.sources.map((si) => w.sig[si]).join('')}`;
-        if (canSfx && v.prevS !== -1) sfx.door(st.s === 1);
+        if (canSfx && v.prevS !== -1) {
+          if (o.style === 'bridge') {
+            sfx.bridge(st.s === 1);
+            this.burst.setParticleTint(hue);
+            for (let x = o.x + 16; x < o.x + o.w; x += 32) this.burst.explode(2, x, o.y + 4);
+          } else {
+            sfx.door(st.s === 1);
+            this.burst.setParticleTint(0xb8b0c8);
+            this.burst.explode(settings.reducedMotion ? 3 : 8, o.x + o.w / 2, o.y + o.h);
+          }
+        }
+        if (v.sp) {
+          if (key !== v.last) { v.last = key; this.doorArt(v, w, st.p, hue); }
+          break;
+        }
         if (key === v.last) break;
         v.last = key;
         g!.clear();
@@ -442,8 +685,13 @@ export class LevelView {
       }
       case 'plate': {
         if (canSfx) sfx.plate(st.s === 1);
+        if (changed && st.s === 1 && v.prevS !== -1) this.pulse(o.x + o.w / 2, o.y + o.h - 4, 6, 30, 0.35, hue, 2);
         const key = `${st.s}`;
         v.glow!.setAlpha(st.s ? 0.55 + Math.sin(t * 6) * 0.1 : 0);
+        if (v.sp) {
+          (v.sp.cap as Phaser.GameObjects.Image).setFrame(st.s ? 'plate_down_g' : 'plate_up_g').setY(o.y + o.h - (st.s ? 6 : 9));
+          break;
+        }
         if (key === v.last) break;
         v.last = key;
         const by = o.y + o.h;
@@ -455,10 +703,24 @@ export class LevelView {
         break;
       }
       case 'lever': {
-        if (canSfx) sfx.lever();
+        if (canSfx) { sfx.lever(); this.pulse(o.x + o.w / 2, o.y + o.h - 10, 4, 20, 0.3, hue, 2); }
         const timer = o.timerTicks > 0 && st.s ? 1 - st.p / o.timerTicks : 0;
         const key = `${st.s}|${timer.toFixed(2)}`;
         v.glow!.setAlpha(st.s ? 0.5 : 0);
+        if (v.sp) {
+          // Off / transition / on poses; the middle pose shows for a few frames after a flip.
+          const pose = now - v.changedAt < 0.09 ? 1 : st.s ? 2 : 0;
+          (v.sp.stick as Phaser.GameObjects.Image).setFrame(`lever_stick${pose}`);
+          (v.sp.knob as Phaser.GameObjects.Image).setFrame(`lever_knob${pose}_g`);
+          if (key === v.last) break;
+          v.last = key;
+          g!.clear();
+          if (timer > 0) {
+            g!.lineStyle(3, hue, 0.9);
+            g!.beginPath(); g!.arc(o.x + o.w / 2, o.y + o.h - 22, 14, -Math.PI / 2, -Math.PI / 2 + timer * Math.PI * 2); g!.strokePath();
+          }
+          break;
+        }
         if (key === v.last) break;
         v.last = key;
         const cx = o.x + o.w / 2, by = o.y + o.h;
@@ -489,6 +751,15 @@ export class LevelView {
         v.last = key;
         const cx = o.x + o.w / 2, by = o.y + o.h;
         g!.clear();
+        if (v.sp) {
+          (v.sp.main as Phaser.GameObjects.Image).setFrame(`node_${isTide ? 'tide' : 'ember'}_${lit ? 'on' : 'off'}`);
+          g!.fillStyle(hue, 1).fillRect(cx - 2, by - 4, 4, 3);
+          if (timer > 0) {
+            g!.lineStyle(3, isTide ? COLORS.tide2 : COLORS.ember2, 0.9);
+            g!.beginPath(); g!.arc(cx, by - 20, 15, -Math.PI / 2, -Math.PI / 2 + timer * Math.PI * 2); g!.strokePath();
+          }
+          break;
+        }
         if (isTide) {
           g!.fillStyle(0x15121e, 1).fillRoundedRect(cx - 13, by - 14, 26, 14, 5);
           g!.fillStyle(lit ? COLORS.tide : 0x1d3446, 1).fillRoundedRect(cx - 10, by - 11, 20, 8, 3);
@@ -513,6 +784,7 @@ export class LevelView {
         const key = fade.toFixed(2);
         if (key === v.last) break;
         v.last = key;
+        if (v.sp) { (v.sp.main as Phaser.GameObjects.TileSprite).setVisible(fade > 0).setAlpha(0.25 + 0.75 * fade); break; }
         g!.clear();
         if (fade <= 0) break;
         g!.fillStyle(0x9fe8ff, 0.55 * fade).fillRect(o.x + 1, o.y, o.w - 2, o.h);
@@ -523,12 +795,15 @@ export class LevelView {
         break;
       }
       case 'crate': {
+        if (Math.abs(st.vx) > 30 && st.vy === 0) sfx.crate();
         pred.objPos(i, alpha, tmpA);
-        v.img!.setPosition(tmpA.x, tmpA.y);
+        if (this.objArt) v.img!.setPosition(this.snap(tmpA.x), this.snap(tmpA.y));
+        else v.img!.setPosition(tmpA.x, tmpA.y);
         break;
       }
       case 'platform': {
         pred.objPos(i, alpha, tmpA);
+        if (v.sp) { (v.sp.main as Phaser.GameObjects.Container).setPosition(this.snap(tmpA.x), this.snap(tmpA.y)); break; }
         const key = `${tmpA.x.toFixed(2)},${tmpA.y.toFixed(2)}`;
         if (key === v.last) break;
         v.last = key;
@@ -541,12 +816,15 @@ export class LevelView {
       }
       case 'saw': {
         pred.objPos(i, alpha, tmpA);
-        v.img!.setPosition(tmpA.x, tmpA.y).setRotation(t * 14);
+        // Pixel art spins through pre-drawn frames instead of being rotated.
+        if (this.objArt) v.img!.setPosition(this.snap(tmpA.x), this.snap(tmpA.y)).setFrame(`saw${Math.floor(t * 28) % 4}`);
+        else v.img!.setPosition(tmpA.x, tmpA.y).setRotation(t * 14);
         break;
       }
       case 'fan': {
         const on = st.s === 1;
         v.emitter!.emitting = on;
+        if (v.sp) { (v.sp.main as Phaser.GameObjects.TileSprite).setFrame(`fan${on ? Math.floor(t * 30) % 4 : 0}`); break; }
         const key = `${on}|${Math.floor(t * 30) % 4}`;
         if (key === v.last) break;
         v.last = key;
@@ -569,6 +847,7 @@ export class LevelView {
       case 'emitter': {
         const on = st.s === 1;
         v.glow!.setAlpha(on ? 0.6 : 0.1);
+        if (v.sp) { (v.sp.main as Phaser.GameObjects.Image).setFrame(on ? 'emitter_on' : 'emitter_off'); break; }
         const key = `${on}`;
         if (key === v.last) break;
         v.last = key;
@@ -586,6 +865,11 @@ export class LevelView {
         const target = st.s ? -Math.PI / 4 : Math.PI / 4;
         v.anim += (target - v.anim) * 0.35;
         if (Math.abs(target - v.anim) < 0.001) v.anim = target;
+        if (v.sp) {
+          const k = Phaser.Math.Clamp(Math.round((Math.PI / 4 - v.anim) / (Math.PI / 8)), 0, 4);
+          (v.sp.plate as Phaser.GameObjects.Image).setFrame(`mirror_a${k}`);
+          break;
+        }
         const key = v.anim.toFixed(3);
         if (key === v.last) break;
         v.last = key;
@@ -602,7 +886,7 @@ export class LevelView {
         break;
       }
       case 'prism': {
-        if (v.last) break;
+        if (v.last || v.sp) break;
         v.last = '1';
         const cx = o.x + TILE / 2, cy = o.y + TILE / 2;
         g!.fillStyle(0xc79bff, 0.5).fillTriangle(cx, cy - 13, cx + 13, cy + 10, cx - 13, cy + 10);
@@ -611,7 +895,13 @@ export class LevelView {
       }
       case 'receiver': {
         if (canSfx) sfx.receiver(st.s === 1);
+        if (changed && v.prevS !== -1) this.pulse(o.x + TILE / 2, o.y + TILE / 2, st.s ? 4 : 22, st.s ? 26 : 6, 0.45, st.s ? 0xfff3c4 : hue, 2);
         v.glow!.setAlpha(st.s ? 0.65 + Math.sin(t * 7) * 0.1 : 0);
+        if (v.sp) {
+          // Inactive -> receiving energy (brief charge-up) -> activated.
+          (v.sp.core as Phaser.GameObjects.Image).setFrame(st.s ? (now - v.changedAt < 0.3 ? 'recv_core_mid' : 'recv_core_on') : 'recv_core_off');
+          break;
+        }
         const key = `${st.s}`;
         if (key === v.last) break;
         v.last = key;
@@ -624,9 +914,10 @@ export class LevelView {
       }
       case 'crystal': {
         if (canSfx) sfx.crystal(st.s === 1);
+        if (changed && v.prevS !== -1 && st.s === 1) this.pulse(o.x + o.w / 2, o.y + o.h / 2, 4, 34, 0.5, COLORS.link, 2);
         const on = st.s === 1;
         const cy = o.y + o.h / 2 + Math.sin(t * 2 + i) * 2.5;
-        v.img!.setY(cy).setTint(on ? 0xffffff : 0x9a88c0).setAlpha(on ? 1 : 0.8);
+        v.img!.setY(this.objArt ? this.snap(cy) : cy).setTint(on ? 0xffffff : 0x9a88c0).setAlpha(on ? 1 : 0.8);
         v.glow!.setY(cy).setAlpha(on ? 0.75 + Math.sin(t * 10) * 0.15 : 0.15 + Math.sin(t * 2) * 0.05);
         break;
       }
@@ -664,6 +955,11 @@ export class LevelView {
       case 'checkpoint': {
         if (changed && st.s > v.prevS && v.prevS !== -1) { sfx.checkpoint(); this.burst.explode(18, o.x + o.w / 2, o.y + 10); }
         v.glow!.setAlpha(st.s ? 0.35 + Math.sin(t * 3) * 0.08 : 0);
+        if (v.sp) {
+          const flag = st.s === 3 ? COLORS.link : st.s === 1 ? COLORS.ember : st.s === 2 ? COLORS.tide : 0x5a5170;
+          (v.sp.flag as Phaser.GameObjects.Image).setFrame(`cp_flag${Math.floor(t * 8) % 3}_g`).setTint(flag);
+          break;
+        }
         const key = `${st.s}|${Math.floor(t * 8) % 8}`;
         if (key === v.last) break;
         v.last = key;
@@ -686,15 +982,19 @@ export class LevelView {
         v.last = key;
         g!.clear();
         const cx = o.x + o.w / 2, top = o.y;
-        g!.fillStyle(0x0d0b17, 0.55);
-        g!.fillRoundedRect(o.x + 2, top + 6, o.w - 4, o.h - 6, { tl: o.w / 2 - 2, tr: o.w / 2 - 2, bl: 0, br: 0 });
+        if (!v.sp) {
+          g!.fillStyle(0x0d0b17, 0.55);
+          g!.fillRoundedRect(o.x + 2, top + 6, o.w - 4, o.h - 6, { tl: o.w / 2 - 2, tr: o.w / 2 - 2, bl: 0, br: 0 });
+        }
         for (let k = 0; k < 2; k++) {
           const a = t * 2.2 + k * Math.PI;
           g!.fillStyle(k === 0 ? COLORS.ember : COLORS.tide, 0.55);
           g!.fillCircle(cx + Math.cos(a) * (o.w * 0.22), top + o.h * 0.55 + Math.sin(a) * (o.h * 0.18), 5);
         }
-        g!.lineStyle(3, 0xf3eefc, 0.85);
-        g!.strokeRoundedRect(o.x + 2, top + 6, o.w - 4, o.h - 6, { tl: o.w / 2 - 2, tr: o.w / 2 - 2, bl: 0, br: 0 });
+        if (!v.sp) {
+          g!.lineStyle(3, 0xf3eefc, 0.85);
+          g!.strokeRoundedRect(o.x + 2, top + 6, o.w - 4, o.h - 6, { tl: o.w / 2 - 2, tr: o.w / 2 - 2, bl: 0, br: 0 });
+        }
         // Rune lamps for each player
         g!.fillStyle(COLORS.ember, mask & 1 ? 1 : 0.25).fillCircle(cx - 8, top - 2, 4);
         g!.fillStyle(COLORS.tide, mask & 2 ? 1 : 0.25).fillCircle(cx + 8, top - 2, 4);
@@ -712,13 +1012,51 @@ export class LevelView {
         const bubble = v.img as unknown as Phaser.GameObjects.Text;
         const target = near ? 1 : 0;
         bubble.setAlpha(bubble.alpha + (target - bubble.alpha) * 0.15);
-        v.text!.setY(o.y + TILE - 16 + Math.sin(t * 3) * 1.5);
+        if (!v.sp) v.text!.setY(o.y + TILE - 16 + Math.sin(t * 3) * 1.5);
         break;
       }
       default:
         break;
     }
     v.prevS = st.s;
+  }
+
+  /** Start a ring from the pool (oldest is reused, so the count stays bounded). */
+  private pulse(x: number, y: number, r0: number, r1: number, life: number, color: number, width = 2): void {
+    if (settings.reducedMotion && r1 > r0) life *= 0.6;
+    let slot = this.rings[0];
+    for (const r of this.rings) { if (r.t >= 1) { slot = r; break; } if (r.t > slot.t) slot = r; }
+    Object.assign(slot, { x, y, r0, r1, t: 0, life, color, width });
+  }
+
+  private renderRings(dt: number): void {
+    const g = this.ringG;
+    g.clear();
+    for (const r of this.rings) {
+      if (r.t >= 1) continue;
+      r.t = Math.min(1, r.t + dt / r.life);
+      const e = 1 - (1 - r.t) * (1 - r.t);
+      g.lineStyle(r.width, r.color, 0.9 * (1 - r.t));
+      g.strokeCircle(r.x, r.y, r.r0 + (r.r1 - r.r0) * e);
+    }
+  }
+
+  /** Level complete: bursts at the exit and on both characters. */
+  celebrate(pred: Predictor): void {
+    const ex = this.level.ofType.exit[0];
+    if (ex !== undefined) {
+      const o = this.level.objects[ex];
+      const cx = o.x + o.w / 2, cy = o.y + o.h / 2;
+      for (const [col, d] of [[COLORS.ember2, 0], [COLORS.link, 0.12], [COLORS.tide2, 0.24]] as const) {
+        this.scene.time.delayedCall(d * 1000, () => this.pulse(cx, cy, 6, 90, 0.9, col, 3));
+      }
+      this.burst.setParticleTint(COLORS.link);
+      this.burst.explode(settings.reducedMotion ? 16 : 40, cx, cy);
+    }
+    for (let i = 0; i < 2; i++) {
+      pred.playerPos(i, 1, tmpA);
+      this.pulse(tmpA.x + BW / 2, tmpA.y + BH / 2, 4, 40, 0.6, ELEMENT_COLOR[i], 2);
+    }
   }
 
   private renderBeams(w: World, t: number): void {
@@ -766,11 +1104,21 @@ export class LevelView {
     if (landed) {
       c.squash = Math.min(0.35, c.prevVy / 1400);
       if (i === this.local || c.prevVy > 400) sfx.land();
+      // Ember throws sparks, Tide splashes.
+      this.burst.setParticleTint(i === 0 ? 0xffb347 : 0x8fe6ff);
+      this.burst.explode(settings.reducedMotion ? 3 : Math.min(10, 3 + Math.floor(c.prevVy / 120)), cx, by - 2);
     }
     if (jumped) {
       c.stretchV = 0.3;
       sfx.jump(i);
+      this.burst.setParticleTint(i === 0 ? 0xffd166 : 0xa6f0ff);
+      this.burst.explode(settings.reducedMotion ? 2 : 5, cx, by - 1);
     }
+    // Footsteps every ~34 px of grounded running (partner quieter).
+    if (!dead && p.grounded && Math.abs(p.vx) > 40) {
+      this.stepDist[i] += Math.abs(p.vx) * dtMs / 1000;
+      if (this.stepDist[i] > 34) { this.stepDist[i] = 0; sfx.step(i, i === this.local ? 1 : 0.5); }
+    } else this.stepDist[i] = 20;
     c.wasDead = dead;
     c.wasGrounded = p.grounded;
     c.prevVy = p.vy;
@@ -886,22 +1234,44 @@ export class LevelView {
     return false;
   }
 
-  private renderLink(pred: Predictor, alpha: number, t: number): void {
+  private renderLink(pred: Predictor, alpha: number, t: number, dt: number): void {
     const g = this.linkG;
     g.clear();
     const w = pred.world;
     const linked = w.linked;
-    if (linked !== this.linkWas) {
-      sfx.link(linked);
-      this.linkWas = linked;
-    }
-    this.linkLevel += ((linked ? 1 : 0) - this.linkLevel) * 0.2;
-    setLinkHum(this.linkLevel);
     pred.playerPos(0, alpha, tmpA);
     pred.playerPos(1, alpha, tmpB);
     const ax = tmpA.x + BW / 2, ay = tmpA.y + BH / 2, bx = tmpB.x + BW / 2, by = tmpB.y + BH / 2;
     const dist = Math.hypot(bx - ax, by - ay);
     const hasCrystals = this.level.ofType.crystal.length > 0;
+    if (linked !== this.linkWas) {
+      sfx.link(linked);
+      this.linkWas = linked;
+      if (linked) {
+        // Activation: rings bloom on both characters and a bright pulse zips across the tether.
+        this.pulse(ax, ay, 6, 46, 0.55, COLORS.ember2, 3);
+        this.pulse(bx, by, 6, 46, 0.55, COLORS.tide2, 3);
+        this.zip = 0;
+      } else {
+        // Deactivation: the tether snaps back into each character, rings collapse.
+        this.snapT = 0.28;
+        this.snapA.x = ax; this.snapA.y = ay; this.snapB.x = bx; this.snapB.y = by;
+        this.pulse(ax, ay, 30, 4, 0.3, COLORS.link, 2);
+        this.pulse(bx, by, 30, 4, 0.3, COLORS.link, 2);
+        this.zip = -1;
+      }
+    }
+    this.linkLevel += ((linked ? 1 : 0) - this.linkLevel) * 0.2;
+    setLinkHum(this.linkLevel);
+
+    if (this.snapT > 0) {
+      this.snapT = Math.max(0, this.snapT - dt);
+      const k = this.snapT / 0.28; // 1 -> 0: fragments retract toward each player
+      const mx = (this.snapA.x + this.snapB.x) / 2, my = (this.snapA.y + this.snapB.y) / 2;
+      g.lineStyle(2, 0xffffff, 0.8 * k);
+      g.lineBetween(ax, ay, ax + (mx - ax) * k * 0.9, ay + (my - ay) * k * 0.9);
+      g.lineBetween(bx, by, bx + (mx - bx) * k * 0.9, by + (my - by) * k * 0.9);
+    }
 
     if (!linked) {
       if (w.linkBlocked && !w.players[0].dead && !w.players[1].dead) {
@@ -940,6 +1310,20 @@ export class LevelView {
       const u = (t * 0.8 + k / 3) % 1;
       g.fillStyle(0xffffff, 0.9 * lvl).fillCircle(ax + (bx - ax) * u, ay + (by - ay) * u, 2.5);
     }
+    // Activation zip: a bright head races from Ember to Tide once.
+    if (this.zip >= 0) {
+      this.zip += dt / 0.32;
+      if (this.zip >= 1) { this.zip = -1; this.pulse(bx, by, 4, 30, 0.35, 0xffffff, 2); }
+      else {
+        const u = this.zip;
+        const hx = ax + (bx - ax) * u, hy = ay + (by - ay) * u;
+        g.fillStyle(lerpColor(COLORS.ember2, COLORS.tide2, u), 0.5).fillCircle(hx, hy, 9);
+        g.fillStyle(0xffffff, 1).fillCircle(hx, hy, 4);
+      }
+    }
+    // Endpoints glow so the connection reads without text.
+    g.fillStyle(COLORS.link, 0.35 * lvl).fillCircle(ax, ay, 7 + Math.sin(t * 8) * 1.5);
+    g.fillStyle(COLORS.link, 0.35 * lvl).fillCircle(bx, by, 7 + Math.sin(t * 8 + 1) * 1.5);
   }
 
   private renderPrompt(w: World, pred: Predictor): void {

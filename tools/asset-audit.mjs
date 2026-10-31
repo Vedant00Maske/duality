@@ -27,6 +27,12 @@ export function auditCharacterSheet(name, dir = CHAR_DIR, specPath = path.join(C
   const frames = json.frames;
   if (!Array.isArray(frames)) return { errors: [...errors, 'frames must be an array (Aseprite "json-array" export)'], warnings };
   const alphaAt = (x, y) => png.rgba[(y * png.width + x) * 4 + 3];
+  // Optional palette (<name>.palette.json next to the sheet): every opaque pixel must use it.
+  const palPath = path.join(dir, `${name}.palette.json`);
+  const palette = fs.existsSync(palPath)
+    ? new Set(Object.values(JSON.parse(fs.readFileSync(palPath, 'utf8'))).map((p) => p.hex.toLowerCase()))
+    : null;
+  const hexAt = (x, y) => { const o = (y * png.width + x) * 4; return '#' + [0, 1, 2].map((k) => png.rgba[o + k].toString(16).padStart(2, '0')).join(''); };
 
   frames.forEach((f, i) => {
     const where = `frame ${i}`;
@@ -37,19 +43,25 @@ export function auditCharacterSheet(name, dir = CHAR_DIR, specPath = path.join(C
     if (!(f.duration > 0)) errors.push(`${where}: missing duration`);
     const { x, y, w, h } = f.frame;
     if (x < 0 || y < 0 || x + w > png.width || y + h > png.height) { errors.push(`${where}: outside the sheet`); return; }
-    let soft = 0, opaque = 0, onBaseline = 0, minX = FW, maxX = -1;
+    let soft = 0, opaque = 0, onBaseline = 0, minX = FW, maxX = -1, offPalette = 0;
     for (let yy = 0; yy < h; yy++) {
       for (let xx = 0; xx < w; xx++) {
         const a = alphaAt(x + xx, y + yy);
         if (a !== 0 && a !== 255) soft++;
         if (a === 255) {
           opaque++;
+          if (palette && !palette.has(hexAt(x + xx, y + yy))) offPalette++;
           if (yy === spec.baseline) onBaseline++;
           minX = Math.min(minX, xx); maxX = Math.max(maxX, xx);
         }
       }
     }
     if (soft) errors.push(`${where}: ${soft} semi-transparent pixels (use hard alpha 0/255)`);
+    if (offPalette) errors.push(`${where}: ${offPalette} pixels outside ${name}.palette.json`);
+    // A filled background would make the frame corners opaque.
+    if ([[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]].some(([cx, cy]) => alphaAt(x + cx, y + cy) !== 0)) {
+      errors.push(`${where}: opaque frame corner (background pixels?)`);
+    }
     f._opaque = opaque;
     f._baseline = onBaseline;
     f._width = maxX >= minX ? maxX - minX + 1 : 0;
@@ -83,7 +95,7 @@ export function auditCharacterSheet(name, dir = CHAR_DIR, specPath = path.join(C
     if (a.tag === 'death' && total > spec.maxDeathMs) errors.push(`death lasts ${total}ms; must be <= ${spec.maxDeathMs}ms (simulation death time)`);
   }
   for (const name2 of tags.keys()) if (!spec.animations.some((a) => a.tag === name2)) warnings.push(`unknown extra tag "${name2}"`);
-  return { errors, warnings };
+  return { errors, warnings, frames: frames.length, tags: [...tags.keys()], paletteChecked: !!palette };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

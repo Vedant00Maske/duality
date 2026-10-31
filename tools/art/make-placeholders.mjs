@@ -11,8 +11,11 @@ import { fileURLToPath } from 'node:url';
 import { encodePNG } from './png.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const outDir = path.resolve(here, '../../apps/web/src/art/characters');
-const spec = JSON.parse(fs.readFileSync(path.join(outDir, 'spec.json'), 'utf8'));
+// Placeholders are development fixtures only; they are not shipped with the game.
+const outDir = path.resolve(here, '../../art-src/placeholders');
+const spec = JSON.parse(fs.readFileSync(path.resolve(here, '../../apps/web/src/art/characters/spec.json'), 'utf8'));
+fs.mkdirSync(outDir, { recursive: true });
+
 const { w: FW, h: FH } = spec.frame;
 const HB = spec.hitbox;
 const PAD = spec.padding;

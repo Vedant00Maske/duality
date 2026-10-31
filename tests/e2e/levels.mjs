@@ -14,6 +14,7 @@ async function player(name) {
   page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${name}] ${m.text()}`); });
   await page.goto(BASE);
   await page.waitForSelector('#screen-home:not([hidden])');
+  await page.evaluate(() => window.__duality.ui?.openPlay?.());
   await page.fill('#name-input', name);
   return page;
 }
@@ -33,6 +34,9 @@ for (const id of ids) {
   await a.click('#btn-ready');
   await b.click('#btn-ready');
   await a.waitForFunction(() => window.__duality.session.state?.phase === 'playing', null, { timeout: 10000 });
+  // World art is lazy-loaded; the view must upgrade from the procedural fallback.
+  const pixel = await a.waitForFunction(() => window.__duality.scene.view?.pixelEnv === true, null, { timeout: 8000 }).then(() => true, () => false);
+  if (!pixel) errors.push(`${id}: pixel-art environment did not load`);
   await sleep(400);
   await a.screenshot({ path: `${OUT}${id}-play.png` });
   await a.keyboard.press('Tab');
@@ -40,9 +44,10 @@ for (const id of ids) {
   await a.screenshot({ path: `${OUT}${id}-overview.png` });
   await a.keyboard.press('Tab');
   const fps = await a.evaluate(() => window.__duality.scene.fps);
-  console.log(id, 'fps', fps);
+  console.log(id, 'fps', fps, 'pixelEnv', pixel);
   await a.evaluate(() => window.__duality.session.send('lobby'));
   await sleep(300);
 }
 console.log('errors:', errors.length ? errors : 'none');
 await browser.close();
+if (errors.length) process.exit(1);

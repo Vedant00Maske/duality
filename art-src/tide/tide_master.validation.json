@@ -1,0 +1,76 @@
+{
+ "file": "art-src/tide/tide_master.png",
+ "opaquePixels": 461,
+ "bbox": {
+  "x": 7,
+  "y": 2,
+  "w": 19,
+  "h": 38
+ },
+ "pixelsOutsideHitboxColumns": [],
+ "coloursUsed": {
+  "#1565b3": 102,
+  "#2492d6": 85,
+  "#3cc8ff": 85,
+  "#72dcff": 76,
+  "#effcff": 40,
+  "#dcfaff": 30,
+  "#2266a8": 14,
+  "#0c2340": 10,
+  "#a6f0ff": 10,
+  "#0b3866": 5,
+  "#ffffff": 4
+ },
+ "checks": [
+  {
+   "name": "canvas is 32x40",
+   "ok": true,
+   "detail": "32x40"
+  },
+  {
+   "name": "PNG is 8-bit RGBA",
+   "ok": true,
+   "detail": "bitDepth 8, colourType 6"
+  },
+  {
+   "name": "hard alpha only (0 or 255)",
+   "ok": true,
+   "detail": "0 semi-transparent pixels"
+  },
+  {
+   "name": "every colour is in the palette",
+   "ok": true,
+   "detail": "11 colours used, 0 off-palette pixels"
+  },
+  {
+   "name": "feet on the baseline (y=39)",
+   "ok": true,
+   "detail": "10 pixels on row 39; lowest row 39"
+  },
+  {
+   "name": "nothing below the baseline",
+   "ok": true,
+   "detail": "lowest row 39"
+  },
+  {
+   "name": "feet centred on the pivot x=16 (±1.5)",
+   "ok": true,
+   "detail": "feet span x 11–22, centre 17"
+  },
+  {
+   "name": "body (rows 26–39) inside hitbox columns 6–25",
+   "ok": true,
+   "detail": "0 body pixels outside"
+  },
+  {
+   "name": "silhouette width ≤ 28 px (fairness)",
+   "ok": true,
+   "detail": "bbox x 7–25 (19 px), y 2–39 (38 px)"
+  },
+  {
+   "name": "flame/head above the hitbox stays in rows 0–11 headroom",
+   "ok": true,
+   "detail": "top row 2"
+  }
+ ]
+}

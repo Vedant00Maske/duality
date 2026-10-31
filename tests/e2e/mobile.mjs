@@ -13,6 +13,7 @@ async function player(name, opts) {
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(BASE);
   await page.waitForSelector('#screen-home:not([hidden])');
+  await page.evaluate(() => window.__duality.ui?.openPlay?.());
   await page.fill('#name-input', name);
   return page;
 }

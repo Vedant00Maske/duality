@@ -59,7 +59,7 @@ export function toast(text: string, kind: 'info' | 'good' | 'warn' | 'bad' = 'in
 }
 
 export function isInputBlocked(): boolean {
-  return pauseOpen || !$('#overlay-results').hidden || !$('#modal-howto').hidden || !$('#modal-settings').hidden;
+  return pauseOpen || !$('#overlay-results').hidden || !$('#modal-howto').hidden || !$('#modal-settings').hidden || !$('#modal-credits').hidden;
 }
 
 export function gameInputEnabled(): boolean {
@@ -76,6 +76,7 @@ export function togglePause(): void {
   if (!$('#modal-howto').hidden || !$('#modal-settings').hidden) {
     show('modal-howto', false);
     show('modal-settings', false);
+    show('modal-credits', false);
     return;
   }
   setPause(!pauseOpen);
@@ -309,8 +310,10 @@ function renderResults(s: RoomStateView, myIdx: number): void {
     sfx.complete();
     recordBest(s.level, s.lastStars, s.lastTicks);
     const last = !nextLevelId(s.level);
-    $('#results-kicker').textContent = last ? 'DUALITY complete — you finished every level!' : 'Level complete';
-    $('#results-title').textContent = def.name;
+    $('#results-panel').classList.toggle('victory', last);
+    if (last) sfx.victory();
+    $('#results-kicker').textContent = last ? 'The Sky Vault is restored — DUALITY complete!' : 'Level complete';
+    $('#results-title').textContent = last ? 'Ember & Tide, together' : def.name;
     $$('#results-stars span').forEach((el, k) => {
       el.classList.remove('on');
       void (el as HTMLElement).offsetWidth;
@@ -369,6 +372,26 @@ export function applyState(s: RoomStateView): void {
   lastPhase = s.phase;
 }
 
+/** Main menu (Play / How to Play / Settings / Credits) or the play panel (name + create/join). */
+export function openMenu(): void {
+  show('home-menu', true);
+  show('home-play', false);
+}
+
+export function openPlay(): void {
+  show('home-menu', false);
+  show('home-play', true);
+  $<HTMLInputElement>('#name-input').focus({ preventScroll: true });
+}
+
+function syncMute(): void {
+  const b = $('#btn-mute');
+  b.textContent = settings.mute ? '🔇' : '🔊';
+  b.setAttribute('aria-pressed', String(settings.mute));
+  b.setAttribute('aria-label', settings.mute ? 'Unmute audio' : 'Mute audio');
+  $<HTMLInputElement>('#set-mute').checked = settings.mute;
+}
+
 export function goHome(message?: string): void {
   setScreen('home');
   stopMusic();
@@ -413,6 +436,10 @@ export function initUI(): void {
   const params = new URLSearchParams(location.search);
   const preset = params.get('room');
   if (preset) codeInput.value = normalizeRoomCode(preset);
+  // Invite links skip the menu and land on the join form.
+  if (preset) openPlay(); else openMenu();
+  $('#btn-play').addEventListener('click', () => { unlockAudio(); sfx.confirm(); openPlay(); });
+  $('#btn-menu-back').addEventListener('click', () => { sfx.click(); openMenu(); });
 
   // Lobby
   buildLevelGrid();
@@ -444,6 +471,7 @@ export function initUI(): void {
     if (t.closest('[data-close]') || (t.classList.contains('modal') && t.classList.contains('overlay'))) {
       show('modal-howto', false);
       show('modal-settings', false);
+      show('modal-credits', false);
     }
     if (open) { sfx.click(); show(`modal-${open}`, true); }
     if (!action) return;
@@ -474,6 +502,9 @@ export function initUI(): void {
   touchSel.addEventListener('change', () => { saveSettings({ touch: touchSel.value as 'auto' | 'on' | 'off' }); updateTouch(); });
   motion.addEventListener('change', () => saveSettings({ reducedMotion: motion.checked }));
   debug.addEventListener('change', () => saveSettings({ debug: debug.checked }));
+  $<HTMLInputElement>('#set-mute').addEventListener('change', (e) => { unlockAudio(); saveSettings({ mute: (e.target as HTMLInputElement).checked }); syncMute(); });
+  $('#btn-mute').addEventListener('click', () => { unlockAudio(); saveSettings({ mute: !settings.mute }); syncMute(); sfx.click(); });
+  syncMute();
 
   $('#btn-dismiss-rotate').addEventListener('click', () => { rotateDismissed = true; updateRotateHint(); });
   window.addEventListener('resize', updateRotateHint);

@@ -1,26 +1,112 @@
-// Ember animation library (43 frames, 32x40) built from the immutable master
-// sprite art-src/ember/ember_master.png. Every frame re-uses the master's own
-// pixels (head, face, torso, arms, hands, legs, boots), moved by whole-pixel
-// offsets — nothing is scaled. Limbs are redrawn only where a pose needs it
-// (run strides, raised arms), and death/respawn use hand-drawn flame shapes
-// shaded with the same palette and rim-to-core method as the head.
+// Character animation libraries (43 frames each, 32x40) built from immutable
+// master sprites: art-src/<name>/<name>_master.png. Every frame re-uses the
+// master's own pixels (head, face, torso, arms, hands, legs, boots), moved by
+// whole-pixel offsets — nothing is scaled. Limbs are redrawn only where a pose
+// needs it (run strides, raised arms). Death/respawn use hand-drawn element
+// shapes (flames for Ember, puddles and droplets for Tide) shaded with the
+// character's palette and the same rim-to-core method as the head.
 //
-// Usage: node tools/art/ember-anims.mjs
-// Output: art-src/ember/final/ (atlas, Aseprite JSON, contact sheet, previews, checks)
+// Usage: node tools/art/char-anims.mjs [ember|tide|all]
+// Output: art-src/<name>/final/ (atlas, Aseprite JSON, contact sheet, previews, checks)
 import fs from 'node:fs';
 import path from 'node:path';
 import { decodePNG, encodePNG, encodeAPNG } from './png.mjs';
 
-const OUT = 'art-src/ember/final';
+const R = (pairs) => Object.fromEntries(pairs.map(([y, ...iv]) => [y, iv]));
+
+// ---------------------------------------------------------------- per-character config
+const CONFIGS = {
+  ember: {
+    label: 'EMBER',
+    // Flame flicker: the spiky tip sways and the inner flame shimmers.
+    hair: (p) => p.y <= 13 || ('drogay'.includes(p.ch) && (p.x <= 14 || p.x >= 25)),
+    variant(name, { sway, shimmer, add }) {
+      switch (name) {
+        case 'B': sway(2, 5, 1); shimmer(); break;
+        case 'C': sway(2, 5, -1); sway(8, 9, 1); break;
+        case 'wind1': sway(2, 6, -1); break;
+        case 'wind2': sway(2, 4, -2); sway(5, 7, -1); shimmer(); break;
+        case 'up': add(13, 1, 'r'); add(13, 2, 'o'); break;
+        case 'up2': add(13, 1, 'r'); add(13, 2, 'o'); add(12, 2, 'r'); shimmer(); break;
+        case 'flare': add(13, 1, 'r'); add(13, 2, 'o'); add(13, 0, 'r'); add(5, 15, 'r'); add(5, 16, 'r'); add(21, 7, 'r'); add(26, 16, 'r'); shimmer(); break;
+        default: break;
+      }
+    },
+    bright: ['r', 'o', 'a', 'g', 'y', 'l'],
+    dim: ['d', 'r', 'o', 'a'],
+    meltBase: R([
+      [28, [10, 10], [23, 23]], [29, [10, 11], [22, 23]], [30, [9, 11], [22, 24]], [31, [9, 12], [21, 24]], [32, [10, 23]],
+      [33, [9, 23]], [34, [9, 24]], [35, [10, 24]], [36, [10, 23]], [37, [10, 23]], [38, [11, 22]], [39, [12, 21]],
+    ]),
+    // death 4-6: flame -> small flame -> ember; respawn 1-3: ember -> small flame -> flame column
+    deathTail: (c) => [c.shape(c.PILE, c.bright), c.shape(c.SMALL, c.dim), c.shape(c.TINY, ['d', 'r', 'a'])],
+    respawnHead: (c) => [c.shape(c.TINY, ['r', 'a', 'g']), c.shape(c.SMALL, c.bright), c.shape(c.COLUMN, c.bright)],
+    PILE: R([[27, [16, 16]], [28, [15, 16]], [29, [15, 17], [12, 12]], [30, [14, 17], [12, 12]], [31, [13, 18], [21, 21]], [32, [12, 19], [21, 21]],
+      [33, [11, 21]], [34, [11, 21]], [35, [10, 22]], [36, [10, 22]], [37, [10, 22]], [38, [10, 22]], [39, [11, 21]]]),
+    SMALL: R([[33, [16, 16]], [34, [15, 17]], [35, [15, 17]], [36, [14, 18]], [37, [13, 19]], [38, [13, 19]], [39, [13, 19]]]),
+    TINY: R([[37, [16, 16]], [38, [15, 17]], [39, [14, 18]]]),
+    COLUMN: R([[9, [15, 15]], [10, [14, 15]], [11, [14, 16]], [12, [13, 16]], [13, [13, 17], [20, 20]], [14, [12, 17], [19, 20]],
+      [15, [12, 18], [19, 20]], [16, [12, 20]], [17, [11, 20]], [18, [11, 20]], [19, [10, 21]], [20, [10, 21], [8, 8]], [21, [9, 21]],
+      [22, [9, 21]], [23, [10, 21]], [24, [11, 21]], [25, [11, 22]], [26, [11, 22]], [27, [11, 21]], [28, [11, 21]], [29, [11, 21]],
+      [30, [11, 21]], [31, [11, 21]], [32, [11, 21]], [33, [10, 22]], [34, [10, 22]], [35, [10, 22]], [36, [10, 22]], [37, [10, 22]],
+      [38, [10, 22]], [39, [11, 21]]]),
+  },
+  tide: {
+    label: 'TIDE',
+    // Water ripple: the droplet tip sways, the crest flows and the inner water glints.
+    hair: (p) => p.y <= 11 && p.ch !== 'w' && p.ch !== 'l',
+    shimmerEvery: 7, // sparse glints, not a texture
+    variant(name, { sway, shimmer, add }) {
+      switch (name) {
+        case 'B': sway(2, 4, 1); shimmer(); break;
+        case 'C': sway(2, 4, -1); sway(8, 9, -1); break;
+        case 'wind1': sway(2, 5, -1); break;
+        case 'wind2': sway(2, 3, -2); sway(4, 6, -1); shimmer(); break;
+        case 'up': add(16, 1, 'r'); add(16, 2, 'a'); break;
+        case 'up2': add(16, 1, 'r'); add(16, 2, 'a'); add(17, 2, 'r'); shimmer(); break;
+        // Splash: water sprays off the head.
+        case 'flare': add(16, 1, 'r'); add(16, 0, 'a'); add(5, 12, 'a'); add(4, 15, 'g'); add(27, 13, 'a'); add(28, 16, 'g'); add(11, 5, 'a'); add(21, 4, 'g'); shimmer(); break;
+        default: break;
+      }
+    },
+    bright: ['r', 'o', 'a', 'g', 'y', 'l'],
+    dim: ['d', 'r', 'o', 'a'],
+    meltBase: R([[33, [12, 20]], [34, [10, 22]], [35, [7, 25]], [36, [6, 26]], [37, [6, 26]], [38, [7, 25]], [39, [8, 24]]]),
+    // death 4-6: puddle with rising droplets -> small puddle -> a few droplets
+    deathTail: (c) => [
+      c.withDrops(c.shape(c.PUDDLE, c.bright), [[11, 31, 'a'], [16, 28, 'g'], [21, 32, 'a'], [14, 33, 'y'], [19, 30, 'g']]),
+      c.withDrops(c.shape(c.SMALL, c.dim), [[10, 35, 'o'], [22, 34, 'a']]),
+      c.withDrops(c.newFrame(), [[11, 38, 'a'], [11, 39, 'r'], [16, 39, 'a'], [17, 39, 'r'], [21, 38, 'a'], [21, 39, 'r']]),
+    ],
+    // respawn 1-3: droplets converge -> puddle gathers -> water spout rises
+    respawnHead: (c) => [
+      c.withDrops(c.newFrame(), [[9, 30, 'a'], [23, 28, 'g'], [13, 36, 'a'], [19, 34, 'y'], [16, 38, 'a'], [16, 39, 'r']]),
+      c.withDrops(c.shape(c.SMALL, c.bright), [[14, 33, 'a'], [18, 31, 'g']]),
+      c.withDrops(c.shape(c.COLUMN, c.bright), [[14, 10, 'a'], [18, 9, 'g'], [12, 12, 'y']]),
+    ],
+    PUDDLE: R([[35, [12, 20]], [36, [9, 23]], [37, [8, 24]], [38, [8, 24]], [39, [9, 23]]]),
+    SMALL: R([[37, [13, 19]], [38, [11, 21]], [39, [12, 20]]]),
+    COLUMN: R([[12, [15, 17]], [13, [14, 18]], [14, [13, 19]], [15, [13, 19]], [16, [12, 20]], [17, [12, 20]], [18, [12, 20]], [19, [12, 20]],
+      [20, [12, 20]], [21, [12, 20]], [22, [12, 20]], [23, [12, 20]], [24, [12, 20]], [25, [12, 20]], [26, [12, 20]], [27, [12, 20]],
+      [28, [12, 20]], [29, [12, 20]], [30, [12, 20]], [31, [12, 20]], [32, [12, 20]], [33, [12, 20]], [34, [12, 20]], [35, [10, 22]],
+      [36, [10, 22]], [37, [10, 22]], [38, [10, 22]], [39, [11, 21]]]),
+  },
+};
+
+const which = process.argv[2] ?? 'all';
+for (const NAME of which === 'all' ? Object.keys(CONFIGS) : [which]) {
+const cfg = CONFIGS[NAME];
+if (!cfg) throw new Error(`unknown character ${NAME}`);
+const OUT = `art-src/${NAME}/final`;
 fs.mkdirSync(path.join(OUT, 'previews'), { recursive: true });
 const spec = JSON.parse(fs.readFileSync('apps/web/src/art/characters/spec.json', 'utf8'));
-const PAL = JSON.parse(fs.readFileSync('art-src/ember/palette.json', 'utf8'));
+const PAL = JSON.parse(fs.readFileSync(`art-src/${NAME}/palette.json`, 'utf8'));
 const W = spec.frame.w, H = spec.frame.h;
 const RGB = Object.fromEntries(Object.entries(PAL).map(([k, v]) => [k, [1, 3, 5].map((i) => parseInt(v.hex.slice(i, i + 2), 16))]));
 const KEY_OF = new Map(Object.entries(RGB).map(([k, c]) => [c.join(','), k]));
 
 // ---------------------------------------------------------------- master parts
-const master = decodePNG(fs.readFileSync('art-src/ember/ember_master.png'));
+const master = decodePNG(fs.readFileSync(`art-src/${NAME}/${NAME}_master.png`));
 const M = [];
 for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
   const o = (y * W + x) * 4;
@@ -50,23 +136,12 @@ const HIP = { back: 14, front: 18 };
 const BOOT_ANCHOR = { back: 3, front: 0 }; // leg column offset inside each boot
 
 // ---------------------------------------------------------------- head variants
-const FLAME = new Set(['d', 'r', 'o', 'a', 'g', 'y']);
-const isFlame = (p) => p.y <= 13 || (FLAME.has(p.ch) && (p.x <= 14 || p.x >= 25));
 function headVariant({ flame = 'A', eyes = 'open' } = {}) {
   let h = HEAD.map((p) => ({ ...p }));
   const sway = (y0, y1, dx) => { h = h.map((p) => (p.y >= y0 && p.y <= y1 ? { ...p, x: p.x + dx } : p)); };
-  const shimmer = () => { h = h.map((p) => (isFlame(p) && (p.x + p.y) % 3 === 0 ? { ...p, ch: p.ch === 'g' ? 'y' : p.ch === 'y' ? 'g' : p.ch } : p)); };
+  const shimmer = () => { h = h.map((p) => (cfg.hair(p) && (p.x + p.y) % (cfg.shimmerEvery ?? 3) === 0 ? { ...p, ch: p.ch === 'g' ? 'y' : p.ch === 'y' ? 'g' : p.ch } : p)); };
   const add = (x, y, ch) => { h = h.filter((p) => !(p.x === x && p.y === y)); h.push({ x, y, ch }); };
-  switch (flame) {
-    case 'B': sway(2, 5, 1); shimmer(); break;
-    case 'C': sway(2, 5, -1); sway(8, 9, 1); break;
-    case 'wind1': sway(2, 6, -1); break;
-    case 'wind2': sway(2, 4, -2); sway(5, 7, -1); shimmer(); break;
-    case 'up': add(13, 1, 'r'); add(13, 2, 'o'); break;
-    case 'up2': add(13, 1, 'r'); add(13, 2, 'o'); add(12, 2, 'r'); shimmer(); break;
-    case 'flare': add(13, 1, 'r'); add(13, 2, 'o'); add(13, 0, 'r'); add(5, 15, 'r'); add(5, 16, 'r'); add(21, 7, 'r'); add(26, 16, 'r'); shimmer(); break;
-    default: break;
-  }
+  cfg.variant(flame, { sway, shimmer, add });
   if (eyes === 'closed') {
     h = h.map((p) => (p.y >= 18 && p.y <= 21 && ((p.x >= 15 && p.x <= 18) || (p.x >= 21 && p.x <= 23)) && 'ewi'.includes(p.ch) ? { ...p, ch: 'c' } : p));
     for (const x of [16, 17, 18, 21, 22, 23]) add(x, 20, 'e');
@@ -181,25 +256,15 @@ function flameShape(rows, bands) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (inside(x, y)) F[y][x] = bands[Math.min(dist[y][x], bands.length - 1)];
   return F;
 }
-const R = (pairs) => Object.fromEntries(pairs.map(([y, ...iv]) => [y, iv]));
-const PILE = R([[27, [16, 16]], [28, [15, 16]], [29, [15, 17], [12, 12]], [30, [14, 17], [12, 12]], [31, [13, 18], [21, 21]], [32, [12, 19], [21, 21]],
-  [33, [11, 21]], [34, [11, 21]], [35, [10, 22]], [36, [10, 22]], [37, [10, 22]], [38, [10, 22]], [39, [11, 21]]]);
-const SMALL_PILE = R([[33, [16, 16]], [34, [15, 17]], [35, [15, 17]], [36, [14, 18]], [37, [13, 19]], [38, [13, 19]], [39, [13, 19]]]);
-const EMBER = R([[37, [16, 16]], [38, [15, 17]], [39, [14, 18]]]);
-const COLUMN = R([[9, [15, 15]], [10, [14, 15]], [11, [14, 16]], [12, [13, 16]], [13, [13, 17], [20, 20]], [14, [12, 17], [19, 20]],
-  [15, [12, 18], [19, 20]], [16, [12, 20]], [17, [11, 20]], [18, [11, 20]], [19, [10, 21]], [20, [10, 21], [8, 8]], [21, [9, 21]],
-  [22, [9, 21]], [23, [10, 21]], [24, [11, 21]], [25, [11, 22]], [26, [11, 22]], [27, [11, 21]], [28, [11, 21]], [29, [11, 21]],
-  [30, [11, 21]], [31, [11, 21]], [32, [11, 21]], [33, [10, 22]], [34, [10, 22]], [35, [10, 22]], [36, [10, 22]], [37, [10, 22]],
-  [38, [10, 22]], [39, [11, 21]]]);
-const BRIGHT = ['r', 'o', 'a', 'g', 'y', 'l'];
-const DIM = ['d', 'r', 'o', 'a'];
+const BRIGHT = cfg.bright;
+const shapeKit = {
+  ...cfg, newFrame, shape: flameShape,
+  withDrops(F, drops) { for (const [x, y, ch] of drops) put(F, x, y, ch); return F; },
+};
 
 function meltFrame() {
   // Head sinks into a pool of its own flame: master head (eyes closed) above a flame base.
-  const F = flameShape(R([
-    [28, [10, 10], [23, 23]], [29, [10, 11], [22, 23]], [30, [9, 11], [22, 24]], [31, [9, 12], [21, 24]], [32, [10, 23]],
-    [33, [9, 23]], [34, [9, 24]], [35, [10, 24]], [36, [10, 23]], [37, [10, 23]], [38, [11, 22]], [39, [12, 21]],
-  ]), BRIGHT);
+  const F = flameShape(cfg.meltBase, BRIGHT);
   draw(F, headVariant({ flame: 'B', eyes: 'closed' }), 0, 7);
   return F;
 }
@@ -278,14 +343,10 @@ const ANIMS = {
     pose({ bodyDy: 2, head: { flame: 'C', eyes: 'closed' }, backArm: { mode: 'rest', dy: 2 }, frontArm: { mode: 'rest', dy: 2 },
       legs: { back: { foot: -1 }, front: { foot: 1 } } }),
     meltFrame(),
-    flameShape(PILE, BRIGHT),
-    flameShape(SMALL_PILE, DIM),
-    flameShape(EMBER, ['d', 'r', 'a']),
+    ...cfg.deathTail(shapeKit),
   ],
   respawn: [
-    flameShape(EMBER, ['r', 'a', 'g']),
-    flameShape(SMALL_PILE, BRIGHT),
-    flameShape(COLUMN, BRIGHT),
+    ...cfg.respawnHead(shapeKit),
     pose({ head: { flame: 'up', eyes: 'closed' } }),
     pose({ head: { flame: 'A' } }),
   ],
@@ -331,7 +392,7 @@ for (const a of spec.animations) {
     const s = analyse(F);
     report.frames.push({ tag: a.tag, frame: i, ...s });
     const where = `${a.tag}[${i}]`;
-    if (s.isolated) report.defects.push(`${where}: ${s.isolated} isolated pixel(s)`);
+    if (s.isolated && !['death', 'respawn'].includes(a.tag)) report.defects.push(`${where}: ${s.isolated} isolated pixel(s)`);
     if (s.components > 1 && !['death', 'respawn'].includes(a.tag)) report.defects.push(`${where}: ${s.components} disconnected pieces`);
     if (GROUNDED.has(a.tag) && !s.baseline && !(a.tag === 'run' && false)) report.defects.push(`${where}: no pixel on the baseline`);
     if (s.width > spec.hitbox.w + 8) report.defects.push(`${where}: silhouette ${s.width}px wide`);
@@ -380,13 +441,13 @@ spec.animations.forEach((a, row) => {
   });
   frameTags.push({ name: a.tag, from, to: jsonFrames.length - 1, direction: 'forward', color: '#000000ff' });
 });
-fs.writeFileSync(path.join(OUT, 'ember.png'), encodePNG(AW, AH, atlas));
-fs.writeFileSync(path.join(OUT, 'ember.json'), JSON.stringify({
+fs.writeFileSync(path.join(OUT, `${NAME}.png`), encodePNG(AW, AH, atlas));
+fs.writeFileSync(path.join(OUT, `${NAME}.json`), JSON.stringify({
   frames: jsonFrames,
   meta: {
-    app: 'https://www.aseprite.org/', version: 'duality-ember-1', image: 'ember.png', format: 'RGBA8888',
+    app: 'https://www.aseprite.org/', version: `duality-${NAME}-1`, image: `${NAME}.png`, format: 'RGBA8888',
     size: { w: AW, h: AH }, scale: '1', frameTags,
-    layers: [{ name: 'ember', opacity: 255, blendMode: 'normal' }],
+    layers: [{ name: NAME, opacity: 255, blendMode: 'normal' }],
     slices: [{ name: 'hitbox', color: '#00ff00ff', keys: [{ frame: 0, bounds: { x: spec.hitbox.x, y: spec.hitbox.y, w: spec.hitbox.w, h: spec.hitbox.h }, pivot: { x: spec.pivot.x - spec.hitbox.x, y: spec.pivot.y - spec.hitbox.y } }] }],
   },
 }, null, 1) + '\n');
@@ -422,7 +483,7 @@ function blit(cv, F, x0, y0, k, opts = {}) {
 {
   const k = 4, cw = W * k + 10, ch = H * k + 26, left = 150;
   const cv = canvas(left + cols * cw + 10, 30 + spec.animations.length * ch, [22, 19, 38]);
-  text(cv, 'EMBER  43 FRAMES  32X40', 10, 8, 3, [255, 200, 120]);
+  text(cv, `${cfg.label}  43 FRAMES  32X40`, 10, 8, 3, NAME === 'ember' ? [255, 200, 120] : [140, 220, 255]);
   spec.animations.forEach((a, row) => {
     const y0 = 30 + row * ch;
     text(cv, a.tag, 10, y0 + 60, 2, [230, 220, 255]);
@@ -448,5 +509,6 @@ for (const a of spec.animations) {
 }
 
 fs.writeFileSync(path.join(OUT, 'frame_checks.json'), JSON.stringify(report, null, 1) + '\n');
-console.log(`atlas ${AW}x${AH}, ${jsonFrames.length} frames, ${frameTags.length} tags`);
+console.log(`${NAME}: atlas ${AW}x${AH}, ${jsonFrames.length} frames, ${frameTags.length} tags`);
 console.log(report.defects.length ? `defects:\n  ${report.defects.join('\n  ')}` : 'no automated defects');
+}

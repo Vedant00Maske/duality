@@ -5,6 +5,7 @@ import {
 } from '@duality/shared';
 import { type CharArtMode, LevelView } from './levelView';
 import { CHARACTER_SHEETS, SHEET_KEY } from '../art/characters';
+import { BG_LAYERS, LIQUIDS, LIQUID_ART, LIQUID_SHEET, OBJECTS_JSON, OBJECTS_PNG, WORLD_ART, bgKey, liquidKey, tilesKey } from '../art/environment';
 import { Predictor } from './predictor';
 import { makeTextures } from './textures';
 import { Input } from './input';
@@ -89,9 +90,40 @@ export class GameScene extends Phaser.Scene {
   preload(): void {
     // Character sprite sheets (Aseprite JSON array). Failure falls back to classic art.
     for (const sheet of CHARACTER_SHEETS) this.load.aseprite(sheet.key, sheet.png, sheet.json);
+    // Liquids are shared by every world; World 1 (menu backdrop and first level) loads at boot.
+    for (const n of LIQUIDS) this.load.image(liquidKey(n), LIQUID_ART[n]);
+    this.load.atlas('objects', OBJECTS_PNG, OBJECTS_JSON);
+    this.queueWorldArt(1);
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
       console.warn(`asset failed to load: ${file.key}`);
     });
+  }
+
+  /** Worlds whose art has been queued (it then stays cached for the session). */
+  private worldQueued = new Set<number>();
+
+  private queueWorldArt(world: number): boolean {
+    const art = WORLD_ART[world];
+    if (!art || this.worldQueued.has(world)) return false;
+    this.worldQueued.add(world);
+    this.load.image(tilesKey(world), art.tiles);
+    for (const l of BG_LAYERS) this.load.image(bgKey(world, l), art.bg[l]);
+    return true;
+  }
+
+  /** Lazily fetch a world's tileset and backdrops; the view upgrades from the procedural fallback when they land. */
+  ensureWorldArt(world: number): void {
+    if (this.queueWorldArt(world) && !this.load.isLoading()) this.load.start();
+  }
+
+  /** Pixel-art textures are sampled nearest-neighbour; liquid sheets get named frames. */
+  private prepTexture(key: string): void {
+    if (!this.textures.exists(key)) return;
+    const tex = this.textures.get(key);
+    if ((LIQUIDS as readonly string[]).some((n) => liquidKey(n as (typeof LIQUIDS)[number]) === key) && !tex.has('surf0')) {
+      for (let f = 0; f < LIQUID_SHEET.frames; f++) tex.add(`surf${f}`, 0, 0, f * LIQUID_SHEET.surfaceH, LIQUID_SHEET.surfaceW, LIQUID_SHEET.surfaceH);
+    }
+    tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
 
   /** Sprite-sheet characters are active (and pixel-art camera rules apply). */
@@ -108,6 +140,14 @@ export class GameScene extends Phaser.Scene {
     for (const key of SHEET_KEY) {
       if (this.textures.exists(key)) this.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     }
+    for (const n of LIQUIDS) this.prepTexture(liquidKey(n));
+    this.prepTexture('objects');
+    this.prepTexture(tilesKey(1));
+    for (const l of BG_LAYERS) this.prepTexture(bgKey(1, l));
+    this.load.on(Phaser.Loader.Events.FILE_COMPLETE, (key: string) => {
+      this.prepTexture(key);
+      this.view?.upgradeEnvironment();
+    });
     onSettings(() => this.view?.setArt(this.artMode()));
     makeTextures(this);
     this.cameras.main.setBackgroundColor('#0d0b17');
@@ -154,6 +194,9 @@ export class GameScene extends Phaser.Scene {
     this.level = level;
     this.local = local;
     this.view = new LevelView(this, level, local, this.artMode());
+    // This world (if not cached yet) and the next one, so the following level is instant.
+    this.ensureWorldArt(this.view.world);
+    this.ensureWorldArt(this.view.world + 1);
     this.pred = new Predictor(level, initial ?? createWorld(level), local);
     this.pred.setSeqBase(this.seqCarry);
     this.sendBits.length = 0;
@@ -180,6 +223,7 @@ export class GameScene extends Phaser.Scene {
   applyNet(s: RoomStateView): void {
     const mySid = session.sessionId;
     const myIdx = s.slots.findIndex((sl) => sl.sid === mySid);
+    if (this.phase === 'playing' && s.phase === 'complete' && this.view && this.pred) this.view.celebrate(this.pred);
     this.phase = s.phase;
     this.paused = s.paused;
     if (s.phase === 'lobby' || myIdx < 0) {

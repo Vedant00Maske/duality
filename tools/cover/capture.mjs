@@ -10,6 +10,7 @@ async function player(name) {
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
   await page.goto(BASE);
   await page.waitForSelector('#screen-home:not([hidden])');
+  await page.evaluate(() => window.__duality.ui?.openPlay?.());
   await page.fill('#name-input', name);
   return page;
 }

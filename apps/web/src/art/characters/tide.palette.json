@@ -1,0 +1,46 @@
+{
+  "d": {
+    "hex": "#0b3866",
+    "role": "deep shadow: collar, limb separation"
+  },
+  "r": {
+    "hex": "#1565b3",
+    "role": "outer rim / body outline"
+  },
+  "o": {
+    "hex": "#2492d6",
+    "role": "water blue / body base"
+  },
+  "a": {
+    "hex": "#3cc8ff",
+    "role": "cyan (brand colour)"
+  },
+  "g": {
+    "hex": "#72dcff",
+    "role": "light cyan inner water"
+  },
+  "y": {
+    "hex": "#a6f0ff",
+    "role": "pale cyan (brand colour), core rim"
+  },
+  "l": {
+    "hex": "#dcfaff",
+    "role": "highlight, face shading, core heart"
+  },
+  "c": {
+    "hex": "#effcff",
+    "role": "face"
+  },
+  "e": {
+    "hex": "#0c2340",
+    "role": "eye outline / pupil"
+  },
+  "i": {
+    "hex": "#2266a8",
+    "role": "iris"
+  },
+  "w": {
+    "hex": "#ffffff",
+    "role": "catchlight / specular"
+  }
+}
