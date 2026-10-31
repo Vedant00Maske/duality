@@ -1,0 +1,19 @@
+{
+  "frame": { "w": 32, "h": 40 },
+  "pivot": { "x": 16, "y": 40 },
+  "baseline": 39,
+  "hitbox": { "x": 6, "y": 12, "w": 20, "h": 28 },
+  "padding": { "border": 1, "shape": 1 },
+  "maxDeathMs": 833,
+  "animations": [
+    { "tag": "idle", "frames": 6, "fps": 8, "loop": true },
+    { "tag": "run", "frames": 8, "fps": 14, "loop": true },
+    { "tag": "jump_rise", "frames": 3, "fps": 12, "loop": false },
+    { "tag": "fall", "frames": 2, "fps": 8, "loop": true },
+    { "tag": "land", "frames": 3, "fps": 20, "loop": false },
+    { "tag": "push", "frames": 6, "fps": 10, "loop": true },
+    { "tag": "interact", "frames": 4, "fps": 12, "loop": false },
+    { "tag": "death", "frames": 6, "fps": 10, "loop": false },
+    { "tag": "respawn", "frames": 5, "fps": 12, "loop": false }
+  ]
+}

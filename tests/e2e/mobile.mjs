@@ -1,0 +1,53 @@
+// Phone-sized two-player session with touch emulation; screenshots HUD + touch controls.
+import { chromium, devices } from 'playwright-core';
+import fs from 'node:fs';
+const BASE = process.argv[2] || 'http://localhost:5173';
+const OUT = new URL('./out/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+fs.mkdirSync(OUT, { recursive: true });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const browser = await chromium.launch({ channel: 'msedge', headless: true });
+const phone = { ...devices['iPhone 13'], viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true };
+const errors = [];
+async function player(name, opts) {
+  const page = await (await browser.newContext(opts)).newPage();
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(BASE);
+  await page.waitForSelector('#screen-home:not([hidden])');
+  await page.fill('#name-input', name);
+  return page;
+}
+const a = await player('Phone', phone);
+await sleep(800);
+await a.screenshot({ path: OUT + 'm1-home.png' });
+await a.tap('#btn-create');
+await a.waitForSelector('#screen-lobby:not([hidden])');
+const code = (await a.textContent('#room-code')).trim();
+await sleep(400);
+await a.screenshot({ path: OUT + 'm2-lobby.png' });
+const b = await player('Laptop', { viewport: { width: 1280, height: 720 } });
+await b.fill('#code-input', code);
+await b.click('#btn-join');
+await b.waitForSelector('#screen-lobby:not([hidden])');
+await a.tap('#btn-ready');
+await b.click('#btn-ready');
+await a.waitForFunction(() => window.__duality.session.state?.phase === 'playing', null, { timeout: 10000 });
+await sleep(800);
+// Hold the on-screen right button via touch events on the phone.
+const box = await a.locator('[data-btn="right"]').boundingBox();
+await a.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+const x0 = await a.evaluate(() => window.__duality.scene.pred.world.players[window.__duality.scene.local].x);
+await a.dispatchEvent('[data-btn="right"]', 'pointerdown', { pointerId: 7, isPrimary: true });
+await sleep(600);
+await a.dispatchEvent('[data-btn="jump"]', 'pointerdown', { pointerId: 8 });
+await sleep(150);
+await a.dispatchEvent('[data-btn="jump"]', 'pointerup', { pointerId: 8 });
+await sleep(300);
+await a.screenshot({ path: OUT + 'm3-game.png' });
+await a.dispatchEvent('[data-btn="right"]', 'pointerup', { pointerId: 7 });
+const x1 = await a.evaluate(() => window.__duality.scene.pred.world.players[window.__duality.scene.local].x);
+console.log('touch moved player by', (x1 - x0).toFixed(1), 'px');
+await a.setViewportSize({ width: 390, height: 844 });
+await sleep(500);
+await a.screenshot({ path: OUT + 'm4-portrait.png' });
+console.log('errors:', errors.length ? errors : 'none');
+await browser.close();

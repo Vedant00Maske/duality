@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d0b17" />
+    <meta name="description" content="DUALITY — a two-player online co-op puzzle platformer. Ember and Tide, two devices, one Resonance Link. No sign-up, no install." />
+    <meta property="og:title" content="DUALITY — co-op elemental puzzle platformer" />
+    <meta property="og:description" content="Two players, two devices, one shared puzzle world. Create a room, share the code, and link up." />
+    <meta property="og:image" content="/cover.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
+    <title>DUALITY — Co-op Elemental Puzzle Platformer</title>
+  </head>
+  <body>
+    <div id="game" aria-hidden="true"></div>
+
+    <!-- Boot / loading -->
+    <div id="boot" class="boot">
+      <div class="boot-logo"><span class="e">DUAL</span><span class="t">ITY</span></div>
+      <div class="spinner" role="status" aria-label="Loading"></div>
+    </div>
+
+    <main id="ui">
+      <!-- HOME -->
+      <section id="screen-home" class="screen" hidden>
+        <div class="home-card">
+          <h1 class="logo" aria-label="Duality"><span class="e">DUAL</span><span class="t">ITY</span></h1>
+          <p class="tagline">Two elements. Two devices. One <b>Resonance Link</b>.</p>
+          <p class="sub">A co-op puzzle platformer for exactly 2 players. Ember walks through fire, Tide through water — and the energy tether between you powers the world.</p>
+
+          <label class="field">
+            <span>Your name</span>
+            <input id="name-input" maxlength="16" autocomplete="nickname" placeholder="Player" />
+          </label>
+
+          <div class="home-actions">
+            <button id="btn-create" class="btn btn-primary btn-lg">Create room</button>
+            <div class="join-row">
+              <input id="code-input" class="code-input" maxlength="5" placeholder="CODE" autocapitalize="characters" autocomplete="off" spellcheck="false" aria-label="Room code" />
+              <button id="btn-join" class="btn btn-secondary btn-lg">Join</button>
+            </div>
+            <p id="home-error" class="form-error" role="alert" hidden></p>
+          </div>
+
+          <div class="home-links">
+            <button class="link" data-open="howto">How to play</button>
+            <span>·</span>
+            <button class="link" data-open="settings">Settings</button>
+          </div>
+          <ul class="facts">
+            <li><b>2 players</b> · each on their own device</li>
+            <li><b>12 levels</b> · 4 worlds · ~3–6 min each</li>
+            <li><b>No sign-up</b>, no install · keyboard or touch</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- LOBBY -->
+      <section id="screen-lobby" class="screen" hidden>
+        <div class="lobby">
+          <header class="lobby-head">
+            <div class="room-code-box">
+              <span class="label">Room code</span>
+              <div id="room-code" class="room-code" aria-live="polite">-----</div>
+              <div class="share-row">
+                <button id="btn-copy-code" class="btn btn-ghost btn-sm">Copy code</button>
+                <button id="btn-copy-link" class="btn btn-ghost btn-sm">Copy invite link</button>
+              </div>
+            </div>
+            <div class="lobby-help">
+              <h2>Waiting room</h2>
+              <p id="lobby-status">Share the code with your partner. They open this page and tap <b>Join</b>.</p>
+            </div>
+          </header>
+
+          <div class="slots">
+            <div class="slot slot-ember" id="slot-0">
+              <div class="slot-avatar ember-avatar" aria-hidden="true"></div>
+              <div class="slot-body">
+                <div class="slot-role">EMBER <small>fire · walks on lava</small></div>
+                <div class="slot-name">—</div>
+                <div class="slot-state">Waiting…</div>
+              </div>
+            </div>
+            <button id="btn-swap" class="btn btn-ghost btn-swap" title="Swap elements">⇄ Swap</button>
+            <div class="slot slot-tide" id="slot-1">
+              <div class="slot-avatar tide-avatar" aria-hidden="true"></div>
+              <div class="slot-body">
+                <div class="slot-role">TIDE <small>water · walks on water</small></div>
+                <div class="slot-name">—</div>
+                <div class="slot-state">Waiting…</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="levels-head">
+            <h3>Choose a level</h3>
+            <span id="host-note" class="muted"></span>
+          </div>
+          <div id="level-grid" class="level-grid"></div>
+
+          <footer class="lobby-foot">
+            <button id="btn-leave" class="btn btn-ghost">Leave room</button>
+            <button id="btn-ready" class="btn btn-primary btn-lg">I'm ready</button>
+          </footer>
+        </div>
+      </section>
+
+      <!-- GAME HUD -->
+      <section id="screen-game" class="screen hud" hidden>
+        <div class="hud-top">
+          <div class="hud-level">
+            <div id="hud-level-name" class="hud-title">—</div>
+            <div id="hud-objective" class="hud-objective">—</div>
+          </div>
+          <div class="hud-right">
+            <div class="hud-chip" title="Level time"><span class="ico">⏱</span><span id="hud-time">0:00</span></div>
+            <div class="hud-chip" title="Deaths"><span class="ico">✖</span><span id="hud-deaths">0</span></div>
+            <div class="hud-chip hud-net" id="hud-net" title="Connection"><span class="dot"></span><span id="hud-ping">—</span></div>
+            <button id="btn-pause" class="btn-icon" aria-label="Pause menu"><svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true"><rect x="1" y="1" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="9" y="1" width="4" height="14" rx="1.5" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+        <div class="hud-you" id="hud-you"></div>
+        <div id="countdown" class="countdown" hidden></div>
+
+        <div id="touch" class="touch" hidden>
+          <div class="touch-left">
+            <button class="tbtn" data-btn="left" aria-label="Move left">◀</button>
+            <button class="tbtn" data-btn="right" aria-label="Move right">▶</button>
+          </div>
+          <div class="touch-right">
+            <button class="tbtn tbtn-sm" data-btn="interact" aria-label="Interact">E</button>
+            <button class="tbtn tbtn-jump" data-btn="jump" aria-label="Jump">⤒</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Overlays -->
+      <div id="overlay-paused" class="overlay" hidden>
+        <div class="panel">
+          <div class="spinner"></div>
+          <h2 id="paused-title">Partner disconnected</h2>
+          <p id="paused-text">Waiting for them to come back. The level is frozen so nobody loses progress.</p>
+          <div class="panel-actions">
+            <button class="btn btn-ghost" data-action="lobby">Back to level select</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="overlay-reconnect" class="overlay" hidden>
+        <div class="panel">
+          <div class="spinner"></div>
+          <h2>Connection lost</h2>
+          <p>Reconnecting… your seat is saved for 45 seconds.</p>
+        </div>
+      </div>
+
+      <div id="overlay-pause" class="overlay" hidden>
+        <div class="panel">
+          <h2>Paused</h2>
+          <p class="muted small">The game keeps running for your partner.</p>
+          <div class="panel-actions col">
+            <button class="btn btn-primary" data-action="resume">Resume</button>
+            <button class="btn btn-secondary" data-action="restart">Restart level <kbd>R</kbd></button>
+            <button class="btn btn-secondary" data-action="lobby">Level select</button>
+            <button class="btn btn-ghost" data-open="howto">How to play</button>
+            <button class="btn btn-ghost" data-open="settings">Settings</button>
+            <button class="btn btn-ghost danger" data-action="leave">Leave room</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="overlay-results" class="overlay" hidden>
+        <div class="panel results">
+          <div class="results-kicker" id="results-kicker">Level complete</div>
+          <h2 id="results-title">—</h2>
+          <div class="stars" id="results-stars"><span>★</span><span>★</span><span>★</span></div>
+          <div class="results-stats">
+            <div><span class="k">Time</span><span class="v" id="results-time">—</span></div>
+            <div><span class="k">Deaths</span><span class="v" id="results-deaths">—</span></div>
+            <div><span class="k">Par</span><span class="v" id="results-par">—</span></div>
+          </div>
+          <p class="muted small" id="results-explain">★ finish · ★ beat par time · ★ 2 deaths or fewer (combined)</p>
+          <div class="panel-actions">
+            <button class="btn btn-ghost" data-action="lobby">Level select</button>
+            <button class="btn btn-secondary" id="btn-vote-replay">Replay</button>
+            <button class="btn btn-primary" id="btn-vote-next">Next level</button>
+          </div>
+          <p class="vote-status" id="vote-status"></p>
+        </div>
+      </div>
+
+      <div id="modal-howto" class="overlay modal" hidden>
+        <div class="panel wide">
+          <button class="btn-close" data-close aria-label="Close">✕</button>
+          <h2>How to play</h2>
+          <div class="howto">
+            <div class="howto-col">
+              <h4>Goal</h4>
+              <p>Get <b class="e">Ember</b> and <b class="t">Tide</b> into the glowing exit <b>together</b>. Every level needs both of you — nobody can finish alone.</p>
+              <h4>Elements</h4>
+              <ul>
+                <li><span class="sw lava"></span><b class="e">Ember</b> is fire: safe in lava, extinguished by water.</li>
+                <li><span class="sw water"></span><b class="t">Tide</b> is water: safe in water, boiled by lava.</li>
+                <li><span class="sw toxic"></span>Green toxin, spikes, saws and live electricity hurt you both.</li>
+              </ul>
+              <h4>The Resonance Link</h4>
+              <p>When you are close and can see each other, an energy tether joins you. Any <span class="crystal-ico">◆</span> crystal the tether passes through is powered.</p>
+            </div>
+            <div class="howto-col">
+              <h4>Controls</h4>
+              <table class="keys">
+                <tr><td>Move</td><td><kbd>←</kbd><kbd>→</kbd> or <kbd>A</kbd><kbd>D</kbd></td></tr>
+                <tr><td>Jump</td><td><kbd>Space</kbd> <kbd>W</kbd> <kbd>↑</kbd> (hold for higher)</td></tr>
+                <tr><td>Interact</td><td><kbd>E</kbd> / <kbd>X</kbd> — levers &amp; mirrors</td></tr>
+                <tr><td>Overview</td><td><kbd>Tab</kbd> / <kbd>M</kbd> — see the whole level</td></tr>
+                <tr><td>Restart</td><td><kbd>R</kbd> · Pause <kbd>Esc</kbd></td></tr>
+                <tr><td>Touch</td><td>On-screen buttons appear on phones &amp; tablets</td></tr>
+              </table>
+              <h4>Things you'll meet</h4>
+              <ul class="glossary">
+                <li><b>Plates</b> hold doors open while weighed down.</li>
+                <li><b>Levers</b> toggle; <b>nodes</b> react only to their element.</li>
+                <li><b>Ice</b> melts at Ember's touch. <b>Crates</b> can be pushed and stood on.</li>
+                <li><b>Mirrors</b> rotate to bend light beams into receivers.</li>
+                <li><b>Fans</b> lift you. Matching colours show what's wired together.</li>
+              </ul>
+              <h4>Scoring</h4>
+              <p>Up to 3 stars per level: finish, beat the par time, and keep combined deaths to 2 or fewer. A full run takes about 30–45 minutes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-settings" class="overlay modal" hidden>
+        <div class="panel">
+          <button class="btn-close" data-close aria-label="Close">✕</button>
+          <h2>Settings</h2>
+          <div class="settings">
+            <label class="setting"><span>Music</span><input type="range" id="set-music" min="0" max="100" /></label>
+            <label class="setting"><span>Sound effects</span><input type="range" id="set-sfx" min="0" max="100" /></label>
+            <label class="setting"><span>Touch controls</span>
+              <select id="set-touch"><option value="auto">Auto</option><option value="on">Always on</option><option value="off">Off</option></select>
+            </label>
+            <label class="setting"><span>Character art</span>
+              <select id="set-art"><option value="classic">Classic</option><option value="sprites">Sprite sheets (placeholder test)</option></select>
+            </label>
+            <label class="setting check"><input type="checkbox" id="set-motion" /><span>Reduce motion (less shake &amp; particles)</span></label>
+            <label class="setting check"><input type="checkbox" id="set-debug" /><span>Show debug overlay (FPS, ping, hitboxes)</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div id="toasts" class="toasts" aria-live="polite"></div>
+      <div id="rotate-hint" class="rotate-hint" hidden>
+        <div>↻</div>
+        <p>Rotate your phone to landscape for the best view.</p>
+        <button class="btn btn-ghost btn-sm" id="btn-dismiss-rotate">Play anyway</button>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

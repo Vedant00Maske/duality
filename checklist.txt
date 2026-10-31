@@ -1,0 +1,434 @@
+Multiplayer Game Challenge — Complete Judging Criteria & Execution Checklist
+I've reviewed the official Handshake AI Skills Studio × OpenAI Multiplayer Game Challenge rules you uploaded.
+
+The most important thing to understand is that your game is evaluated on four equally weighted criteria, not just whether it works.
+Official judging scorecard
+100%
+Total Round 1 evaluation weight
+Execution
+25%
+
+
+
+Does the game work reliably?
+
+Creativity
+25%
+
+
+
+Is the idea distinctive?
+
+Usefulness / Value
+25%
+
+
+
+Does it deliver a compelling experience?
+
+Polish & Thoughtfulness
+25%
+
+
+
+Does it feel like a finished product?
+
+
+There are two judging rounds:
+1. Round 1: All valid submissions are evaluated against these four criteria.
+2. Round 2: The top 20 entries are evaluated again against the same criteria by a panel of judges from Handshake or partner sponsors.
+The top three winners receive $1,000 each. Pasted text.txt
+
+
+Let's turn these rules into an actionable checklist so that we can design the game around achieving a score of 5/5 in every category.
+
+1. Execution — 25%
+Target: 5/5
+This is the technical foundation. Judges want evidence that the game is genuinely playable, multiplayer, stable and complete.
+
+The official scoring scale is:
+Score	What it means
+1/5	Does not meet requirements or is unreliable
+2/5	Some requirements met; major gaps
+3/5	All requirements met; core functionality works
+4/5	Works well, with minor issues
+5/5	Fully functional, stable and demo-ready end-to-end
+
+Pasted text.txt
+A. Multiplayer functionality
+- [ ] Multiple players can join the same game.
+- [ ] Players can join from separate devices.
+- [ ] Supported devices include phones, tablets and laptops.
+- [ ] Players can join using a room code.
+- [ ] The room code is unique enough to prevent accidental room collisions.
+- [ ] A player can create a new room.
+- [ ] A player can join an existing room.
+- [ ] Invalid room codes produce understandable error messages.
+- [ ] Players can see who else has joined.
+- [ ] The host can start the game.
+- [ ] The game handles players joining and leaving.
+- [ ] The game supports the intended minimum and maximum player counts.
+- [ ] Players do not need to create accounts.
+- [ ] Players do not need to install anything.
+B. Real-time synchronization
+This is one of the most important technical requirements in the mission.
+- [ ] Every player sees the same game state.
+- [ ] Actions performed by one player appear on other players' screens.
+- [ ] Score updates synchronize correctly.
+- [ ] Turn changes synchronize correctly.
+- [ ] Timers synchronize correctly.
+- [ ] Player elimination or status changes synchronize correctly.
+- [ ] Game-start events reach all players.
+- [ ] Game-end events reach all players.
+- [ ] Repeated actions do not create duplicate events.
+- [ ] Simultaneous actions do not corrupt the game state.
+- [ ] Players cannot manipulate their local screens to gain an unfair advantage.
+- [ ] Reconnecting players receive the latest game state.
+Important: Multiplayer should not simply mean that several people open the same URL. The game must have a shared authoritative state.
+C. Game mechanics and reliability
+- [ ] The game has a clearly defined objective.
+- [ ] The game has understandable rules.
+- [ ] Players know what actions they can perform.
+- [ ] The game has a defined start condition.
+- [ ] The game has a defined end condition.
+- [ ] Winning and losing conditions work correctly.
+- [ ] Scores are calculated correctly.
+- [ ] Invalid actions are rejected.
+- [ ] Players cannot perform actions outside their turn, if turn-based.
+- [ ] The game handles unexpected refreshes.
+- [ ] The game handles network interruptions.
+- [ ] The game handles disconnected players.
+- [ ] The game does not become stuck when someone leaves.
+- [ ] The game can be restarted or a new round can be started.
+- [ ] No critical errors appear during normal gameplay.
+D. End-to-end testing
+- [ ] Test with at least two different devices.
+- [ ] Test with at least three simultaneous players.
+- [ ] Test with the maximum supported player count.
+- [ ] Test joining an existing room.
+- [ ] Test incorrect room codes.
+- [ ] Test refreshing a browser during a game.
+- [ ] Test disconnecting and reconnecting.
+- [ ] Test two players acting simultaneously.
+- [ ] Test completing an entire game.
+- [ ] Test starting a second game.
+- [ ] Test the public deployment link, not just the development environment.
+What separates 3/5 from 5/5: A game that works once is not necessarily reliable. It must survive realistic multiplayer situations and be ready for someone unfamiliar with the project to play it.
+
+2. Creativity — 25%
+Target: 5/5
+The official rules specifically distinguish between common ideas and fresh concepts, unexpected use cases or clever implementations.
+Pasted text.txt
+Score	Creativity expectation
+1/5	Common idea with minimal differentiation
+2/5	Slight variation on a common idea
+3/5	Interesting twist or thoughtful angle
+4/5	Distinctive idea with notable originality
+5/5	Fresh concept, unexpected use case or particularly clever implementation
+
+A. Originality of the concept
+- [ ] The game has a recognizable identity.
+- [ ] The concept is not simply a generic copy of an existing game.
+- [ ] It has an original central mechanic or interesting twist.
+- [ ] The concept is easy to explain but difficult to master.
+- [ ] It offers something players cannot get from a basic single-player game.
+- [ ] Multiplayer is essential to the experience rather than an optional addition.
+B. Gameplay innovation
+- [ ] Players have meaningful decisions to make.
+- [ ] Players can influence one another's outcomes.
+- [ ] The game encourages interaction rather than passive participation.
+- [ ] There is an interesting strategic element.
+- [ ] The game creates unpredictable or entertaining situations.
+- [ ] Different players can adopt different strategies.
+- [ ] The gameplay does not become repetitive after one round.
+- [ ] There is an element of surprise, tension, competition or cooperation.
+C. Differentiation
+- [ ] The game has a memorable hook.
+- [ ] Its mechanics are distinguishable from common multiplayer games.
+- [ ] It has a distinctive visual identity.
+- [ ] Its theme and mechanics complement one another.
+- [ ] Its multiplayer design contributes to its originality.
+- [ ] There is a clear reason someone would choose this game over alternatives.
+What separates 3/5 from 5/5: Adding a leaderboard to a standard quiz game is a small variation. Creating an entirely new social deduction mechanic, for example, could be a much stronger differentiator.
+
+3. Usefulness / Value — 25%
+Target: 5/5
+This category evaluates whether the game genuinely delivers value to its intended audience.
+
+The official rules describe the highest score as something that meaningfully serves its purpose or delights its intended audience.
+Pasted text.txt
+Score	Usefulness expectation
+1/5	Hard to see the point or appeal
+2/5	Limited appeal; impact unclear
+3/5	Clear practical or experiential value
+4/5	Strong value with clear benefit
+5/5	Highly compelling; meaningfully serves its purpose or delights users
+
+A. Target audience
+- [ ] We know exactly who the game is designed for.
+- [ ] Its intended audience is sufficiently broad or clearly justified.
+- [ ] The game is suitable for its intended age group.
+- [ ] Players can understand the concept without technical knowledge.
+- [ ] The game works for friends, families or classmates, depending on its intended audience.
+- [ ] The game does not require players to know each other beforehand, unless that is intentional.
+B. Entertainment and engagement
+- [ ] The game is fun within the first minute.
+- [ ] Players have a reason to stay until the end.
+- [ ] The game encourages conversation and interaction.
+- [ ] Players feel involved rather than waiting passively.
+- [ ] There is enough variation to encourage replay.
+- [ ] The game offers a satisfying conclusion.
+- [ ] Players have a reason to invite others.
+- [ ] The game creates memorable moments.
+C. Accessibility and convenience
+- [ ] No account creation is required.
+- [ ] No software installation is required.
+- [ ] Players can join through a public link.
+- [ ] Players can enter a room code.
+- [ ] Instructions are easy to understand.
+- [ ] The game works on mobile and desktop.
+- [ ] The interface is usable on smaller screens.
+- [ ] The time required to start playing is minimal.
+- [ ] Players can understand their current status and objective.
+D. Replayability
+- [ ] Multiple rounds are possible.
+- [ ] Different matches can produce different outcomes.
+- [ ] There are meaningful strategic choices.
+- [ ] Players have a reason to play again.
+- [ ] The game avoids becoming predictable.
+- [ ] The game supports different group sizes where appropriate.
+What separates 3/5 from 5/5: A playable game provides entertainment. A compelling game creates an experience people actively want to share with others.
+
+4. Polish & Thoughtfulness — 25%
+Target: 5/5
+This category is where many technically functional projects can lose points.
+
+A project can work perfectly and still feel unfinished.
+Pasted text.txt
+Score	Polish expectation
+1/5	Rough, confusing, limited usability
+2/5	Basic usability, little refinement
+3/5	Usable with basic UX considerations
+4/5	Well-polished with thoughtful usability
+5/5	Feels intentional and real, with edge cases and clear guidance
+
+A. Visual design
+- [ ] The game has a consistent design language.
+- [ ] Typography is readable.
+- [ ] Colours are consistent.
+- [ ] Buttons are visually distinguishable.
+- [ ] Important information has appropriate visual hierarchy.
+- [ ] The layout is not cluttered.
+- [ ] The game looks professional.
+- [ ] Animations are smooth and purposeful.
+- [ ] Transitions between game states feel natural.
+- [ ] Loading states are designed.
+- [ ] Error states are designed.
+- [ ] Empty states are designed.
+B. User experience
+- [ ] The landing page immediately communicates what the game is.
+- [ ] A first-time player knows how to begin.
+- [ ] Creating a room is straightforward.
+- [ ] Joining a room is straightforward.
+- [ ] The room code is prominently displayed.
+- [ ] Players know when they are waiting for others.
+- [ ] Players know whose turn it is.
+- [ ] Players know what to do next.
+- [ ] Scores and progress are clearly visible.
+- [ ] The winner is clearly announced.
+- [ ] Players can easily play again.
+- [ ] Navigation is intuitive.
+C. Edge cases and thoughtful details
+- [ ] The host disconnects.
+- [ ] A player disconnects.
+- [ ] A player joins after the game has started.
+- [ ] A player submits an invalid action.
+- [ ] Two players act at the same time.
+- [ ] The room becomes empty.
+- [ ] The game reaches its time limit.
+- [ ] A player refreshes the page.
+- [ ] A room code is invalid.
+- [ ] A room is already full.
+- [ ] A player attempts to join twice.
+- [ ] The network temporarily becomes unavailable.
+For every relevant scenario, there should be an intentional response rather than an unexplained failure.
+D. Instructions and onboarding
+- [ ] A new player can understand the game without the creator explaining it.
+- [ ] Rules are available inside the game.
+- [ ] The objective is visible.
+- [ ] Controls are explained.
+- [ ] Scoring is explained.
+- [ ] The winning condition is explained.
+- [ ] The expected number of players is stated.
+- [ ] The approximate duration of a game is stated.
+- [ ] A first-time user can start playing without external instructions.
+What separates 3/5 from 5/5: A functional interface lets users play. A thoughtful interface anticipates what users might misunderstand, prevents mistakes and makes the entire experience feel complete.
+
+5. Submission requirements — Mandatory checklist
+This is separate from the four weighted judging criteria. Even an excellent game needs a valid submission.
+
+The official rules require all four of these items:
+Pasted text.txt
+- [ ] Project title: A memorable, appropriate name.
+- [ ] Project cover image: A visual representation of the game.
+- [ ] Project description: Explain the concept and what makes it interesting.
+- [ ] Project link/URL: A publicly accessible link to the deployed project.
+The project must be submitted to the Handshake AI Skills Studio's Create a Multiplayer Game mission.
+Submission eligibility
+- [ ] At least 18 years old or the applicable age of majority.
+- [ ] Legal resident of an eligible country.
+- [ ] Physically present in an eligible country when entering.
+- [ ] Have an active Handshake account.
+- [ ] Use the email associated with that account for entry.
+- [ ] Submit before the official deadline.
+Important deadline discrepancy
+Your initial challenge description says October 31 at 11:59 PM PT. However, the uploaded official rules specify October 30, 2026, at 11:59 PM PT.
+
+I would treat the official rules as authoritative and submit before the earlier deadline. Pasted text.txt
+
+
+India is explicitly included in Appendix A's eligible-country list. Pasted text.txt
+
+
+Multiple entries are allowed, but mass entries or entries generated by scripts, macros or automated devices are prohibited. Pasted text.txt
+ Pasted text.txt
+
+
+6. How we should optimize the project for judging
+Since every category carries exactly 25%, we should not spend all our time on technical functionality while neglecting creativity and presentation.
+
+Here is the target scorecard we should use throughout development.
+Our project acceptance targets
+20/20
+Maximum possible rubric score
+Execution
+
+Reliable multiplayer, synchronization and complete gameplay
+
+5/5
+
+Creativity
+
+Original concept and distinctive mechanics
+
+5/5
+
+Usefulness / Value
+
+Highly engaging, accessible and replayable
+
+5/5
+
+Polish & Thoughtfulness
+
+Professional UI, onboarding and edge-case handling
+
+5/5
+
+
+Development priorities
+I recommend the following order:
+Priority	Focus	Why
+P0	Core game concept and mechanics	Determines originality and value
+P0	Multiplayer architecture	Fundamental mission requirement
+P0	Real-time synchronization	Fundamental mission requirement
+P1	Complete gameplay and reliability	Essential for 5/5 execution
+P1	UI/UX and visual identity	Essential for 5/5 polish
+P1	Edge cases and recovery	Separates finished products from prototypes
+P2	Animations and sound	Improves perceived quality
+P2	Replayability and additional modes	Improves engagement and value
+P2	Submission presentation	Makes the project easier to evaluate
+
+7. Final master checklist
+This is the checklist I suggest we use as our actual project tracker.
+Project readiness tracker
+0/48 completed
+
+
+
+0% checklist completion
+1. Game concept
+[ ] Unique concept and memorable identity
+[ ] Clear target audience
+[ ] Original gameplay mechanic
+[ ] Defined objective and winning conditions
+[ ] Balanced rules and scoring
+
+
+2. Multiplayer
+[ ] Public game link
+[ ] Room creation
+[ ] Room-code joining
+[ ] Multiple devices supported
+[ ] No login or installation required
+[ ] Live player list
+[ ] Host controls
+[ ] Shared authoritative game state
+
+
+3. Synchronization
+[ ] Real-time player actions
+[ ] Synchronized scores
+[ ] Synchronized turns and timers
+[ ] Simultaneous-action handling
+[ ] Reconnection and state recovery
+[ ] No duplicate or conflicting actions
+
+
+4. Gameplay
+[ ] Complete start-to-finish gameplay
+[ ] Valid and invalid action handling
+[ ] Winner and loser determination
+[ ] Replay functionality
+[ ] Multiple rounds
+[ ] Appropriate player limits
+
+
+5. Design and UX
+[ ] Professional landing page
+[ ] Consistent visual identity
+[ ] Responsive mobile layout
+[ ] Clear instructions
+[ ] Intuitive controls
+[ ] Loading and error states
+[ ] Animations and feedback
+[ ] Clear results screen
+
+
+6. Testing
+[ ] Two-device testing
+[ ] Three-player testing
+[ ] Maximum-player testing
+[ ] Disconnect and reconnect testing
+[ ] Refresh testing
+[ ] Simultaneous-action testing
+[ ] Complete game testing
+[ ] Fresh public-link testing
+
+
+7. Submission
+[ ] Project title
+[ ] Project cover image
+[ ] Project description
+[ ] Public project URL
+[ ] Handshake mission submission
+[ ] Eligibility verified
+[ ] Deadline verified
+
+Reset checklist
+
+This is our development acceptance checklist, not an additional official scoring rubric.
+8. One important strategic consideration
+We should design the game for a judge who:
+1. Has never heard of our game.
+2. Opens the public link.
+3. Has no instructions from us.
+4. Joins a room with another person.
+5. Understands the rules within seconds.
+6. Plays a complete round.
+7. Walks away remembering the experience.
+If we can achieve that, we're addressing all four judging dimensions simultaneously.
+
+My recommendation for our next step: Before writing any code, let's brainstorm and evaluate game concepts against all four criteria. We should select a concept with a strong originality factor, naturally multiplayer mechanics, and enough scope to create a genuinely polished experience before the deadline.
+
+We should build for a 20/20 rubric, not merely a functioning multiplayer demo

@@ -1,0 +1,76 @@
+{
+ "file": "art-src/ember/ember_master.png",
+ "opaquePixels": 458,
+ "bbox": {
+  "x": 6,
+  "y": 2,
+  "w": 20,
+  "h": 38
+ },
+ "pixelsOutsideHitboxColumns": [],
+ "coloursUsed": {
+  "#c8341b": 99,
+  "#ee5019": 78,
+  "#fa7c1b": 68,
+  "#fcc845": 66,
+  "#fca82a": 45,
+  "#fdf2cf": 40,
+  "#fde27f": 28,
+  "#a8321a": 14,
+  "#3f120b": 10,
+  "#8e2213": 8,
+  "#ffffff": 2
+ },
+ "checks": [
+  {
+   "name": "canvas is 32x40",
+   "ok": true,
+   "detail": "32x40"
+  },
+  {
+   "name": "PNG is 8-bit RGBA",
+   "ok": true,
+   "detail": "bitDepth 8, colourType 6"
+  },
+  {
+   "name": "hard alpha only (0 or 255)",
+   "ok": true,
+   "detail": "0 semi-transparent pixels"
+  },
+  {
+   "name": "every colour is in the palette",
+   "ok": true,
+   "detail": "11 colours used, 0 off-palette pixels"
+  },
+  {
+   "name": "feet on the baseline (y=39)",
+   "ok": true,
+   "detail": "10 pixels on row 39; lowest row 39"
+  },
+  {
+   "name": "nothing below the baseline",
+   "ok": true,
+   "detail": "lowest row 39"
+  },
+  {
+   "name": "feet centred on the pivot x=16 (±1.5)",
+   "ok": true,
+   "detail": "feet span x 11–22, centre 17"
+  },
+  {
+   "name": "body (rows 26–39) inside hitbox columns 6–25",
+   "ok": true,
+   "detail": "0 body pixels outside"
+  },
+  {
+   "name": "silhouette width ≤ 28 px (fairness)",
+   "ok": true,
+   "detail": "bbox x 6–25 (20 px), y 2–39 (38 px)"
+  },
+  {
+   "name": "flame/head above the hitbox stays in rows 0–11 headroom",
+   "ok": true,
+   "detail": "top row 2"
+  }
+ ]
+}

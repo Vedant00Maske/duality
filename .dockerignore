@@ -1,0 +1,7 @@
+node_modules
+**/node_modules
+**/dist
+tests/e2e/out
+.git
+*.log
+game.docx

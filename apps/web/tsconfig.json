@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vite/client"],
+    "paths": { "@duality/shared": ["../../packages/shared/src/index.ts"] }
+  },
+  "include": ["src", "vite.config.ts", "../../packages/shared/src"]
+}

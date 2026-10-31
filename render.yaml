@@ -1,0 +1,14 @@
+# One-click deploy on Render (Blueprint). WebSockets are supported on web services.
+services:
+  - type: web
+    name: duality
+    runtime: node
+    plan: starter # 'free' works too, but free instances sleep after 15 min idle (slow first load)
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production

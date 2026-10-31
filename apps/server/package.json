@@ -1,0 +1,18 @@
+{
+  "name": "@duality/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@colyseus/core": "0.18.23",
+    "@colyseus/schema": "5.0.43",
+    "@colyseus/ws-transport": "0.18.4",
+    "@duality/shared": "1.0.0",
+    "@types/express": "5.0.6",
+    "express": "5.3.0"
+  }
+}

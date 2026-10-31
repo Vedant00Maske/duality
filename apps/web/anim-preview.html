@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DUALITY — sprite animation preview (dev)</title>
+    <style>
+      html, body { margin: 0; background: #0d0b17; color: #f3eefc; font-family: system-ui, sans-serif; }
+      #info { padding: 8px 12px; font-size: 13px; color: #a49cbc; }
+      #info b { color: #f3eefc; }
+    </style>
+  </head>
+  <body>
+    <div id="info"><b>Sprite animation preview</b> — green: 20×28 hitbox · magenta: pivot (16,40) · white line: ground baseline · columns: facing right / mirrored left · 3× integer zoom, nearest-neighbour</div>
+    <div id="stage"></div>
+    <script type="module" src="/src/dev/animPreview.ts"></script>
+  </body>
+</html>

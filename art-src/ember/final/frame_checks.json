@@ -1,0 +1,822 @@
+{
+ "frames": [
+  {
+   "tag": "idle",
+   "frame": 0,
+   "pixels": 458,
+   "bbox": [
+    6,
+    2,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.860262008733624,
+    20.91703056768559
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "idle",
+   "frame": 1,
+   "pixels": 458,
+   "bbox": [
+    6,
+    2,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.882096069868995,
+    20.91703056768559
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "idle",
+   "frame": 2,
+   "pixels": 454,
+   "bbox": [
+    6,
+    3,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.854625550660794,
+    21.722466960352424
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "idle",
+   "frame": 3,
+   "pixels": 454,
+   "bbox": [
+    6,
+    3,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.876651982378855,
+    21.722466960352424
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "idle",
+   "frame": 4,
+   "pixels": 454,
+   "bbox": [
+    6,
+    3,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.854625550660794,
+    21.722466960352424
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "idle",
+   "frame": 5,
+   "pixels": 458,
+   "bbox": [
+    6,
+    2,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.882096069868995,
+    20.91703056768559
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "run",
+   "frame": 0,
+   "pixels": 438,
+   "bbox": [
+    7,
+    2,
+    26,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    16.495433789954337,
+    20.449771689497716
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "run",
+   "frame": 1,
+   "pixels": 432,
+   "bbox": [
+    7,
+    3,
+    26,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    16.47685185185185,
+    21.14814814814815
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "run",
+   "frame": 2,
+   "pixels": 448,
+   "bbox": [
+    7,
+    2,
+    26,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    16.473214285714285,
+    20.636160714285715
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "run",
+   "frame": 3,
+   "pixels": 444,
+   "bbox": [
+    6,
+    1,
+    26,
+    39
+   ],
+   "width": 21,
+   "centroid": [
+    16.385135135135137,
+    19.42117117117117
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "run",
+   "frame": 4,
+   "pixels": 447,
+   "bbox": [
+    6,
+    2,
+    26,
+    39
+   ],
+   "width": 21,
+   "centroid": [
+    16.411633109619686,
+    20.476510067114095
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "run",
+   "frame": 5,
+   "pixels": 439,
+   "bbox": [
+    6,
+    3,
+    26,
+    39
+   ],
+   "width": 21,
+   "centroid": [
+    16.380410022779042,
+    21.15261958997722
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "run",
+   "frame": 6,
+   "pixels": 448,
+   "bbox": [
+    7,
+    2,
+    26,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    16.455357142857142,
+    20.636160714285715
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "run",
+   "frame": 7,
+   "pixels": 439,
+   "bbox": [
+    7,
+    1,
+    26,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    16.451025056947607,
+    19.5626423690205
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "jump_rise",
+   "frame": 0,
+   "pixels": 452,
+   "bbox": [
+    6,
+    1,
+    26,
+    39
+   ],
+   "width": 21,
+   "centroid": [
+    15.814159292035399,
+    20.542035398230087
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "jump_rise",
+   "frame": 1,
+   "pixels": 448,
+   "bbox": [
+    6,
+    0,
+    26,
+    38
+   ],
+   "width": 21,
+   "centroid": [
+    15.783482142857142,
+    19.205357142857142
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 0
+  },
+  {
+   "tag": "jump_rise",
+   "frame": 2,
+   "pixels": 440,
+   "bbox": [
+    6,
+    0,
+    26,
+    36
+   ],
+   "width": 21,
+   "centroid": [
+    15.88409090909091,
+    18.813636363636363
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 0
+  },
+  {
+   "tag": "fall",
+   "frame": 0,
+   "pixels": 450,
+   "bbox": [
+    6,
+    1,
+    27,
+    38
+   ],
+   "width": 22,
+   "centroid": [
+    15.757777777777777,
+    20.23111111111111
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 0
+  },
+  {
+   "tag": "fall",
+   "frame": 1,
+   "pixels": 451,
+   "bbox": [
+    6,
+    1,
+    27,
+    38
+   ],
+   "width": 22,
+   "centroid": [
+    15.771618625277162,
+    20.175166297117517
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 0
+  },
+  {
+   "tag": "land",
+   "frame": 0,
+   "pixels": 453,
+   "bbox": [
+    6,
+    4,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.876379690949227,
+    22.73068432671082
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "land",
+   "frame": 1,
+   "pixels": 454,
+   "bbox": [
+    6,
+    3,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.876651982378855,
+    21.83259911894273
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "land",
+   "frame": 2,
+   "pixels": 458,
+   "bbox": [
+    6,
+    2,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.860262008733624,
+    20.91703056768559
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "push",
+   "frame": 0,
+   "pixels": 441,
+   "bbox": [
+    7,
+    3,
+    27,
+    39
+   ],
+   "width": 21,
+   "centroid": [
+    17.857142857142858,
+    21.43764172335601
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "push",
+   "frame": 1,
+   "pixels": 439,
+   "bbox": [
+    8,
+    3,
+    27,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    17.915717539863326,
+    21.33485193621868
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "push",
+   "frame": 2,
+   "pixels": 438,
+   "bbox": [
+    8,
+    3,
+    27,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    17.949771689497716,
+    21.30365296803653
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "push",
+   "frame": 3,
+   "pixels": 439,
+   "bbox": [
+    8,
+    3,
+    27,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    17.89749430523918,
+    21.375854214123006
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "push",
+   "frame": 4,
+   "pixels": 438,
+   "bbox": [
+    8,
+    3,
+    27,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    17.91552511415525,
+    21.30593607305936
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "push",
+   "frame": 5,
+   "pixels": 438,
+   "bbox": [
+    8,
+    3,
+    27,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    17.922374429223744,
+    21.30821917808219
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "interact",
+   "frame": 0,
+   "pixels": 453,
+   "bbox": [
+    6,
+    2,
+    26,
+    39
+   ],
+   "width": 21,
+   "centroid": [
+    15.84326710816777,
+    20.779249448123622
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "interact",
+   "frame": 1,
+   "pixels": 454,
+   "bbox": [
+    6,
+    2,
+    27,
+    39
+   ],
+   "width": 22,
+   "centroid": [
+    15.907488986784141,
+    20.704845814977972
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "interact",
+   "frame": 2,
+   "pixels": 450,
+   "bbox": [
+    6,
+    3,
+    27,
+    39
+   ],
+   "width": 22,
+   "centroid": [
+    15.917777777777777,
+    21.533333333333335
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "interact",
+   "frame": 3,
+   "pixels": 458,
+   "bbox": [
+    6,
+    2,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.882096069868995,
+    20.91703056768559
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "death",
+   "frame": 0,
+   "pixels": 460,
+   "bbox": [
+    5,
+    0,
+    27,
+    39
+   ],
+   "width": 23,
+   "centroid": [
+    15.819565217391304,
+    19.467391304347824
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "death",
+   "frame": 1,
+   "pixels": 447,
+   "bbox": [
+    6,
+    4,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.903803131991051,
+    22.599552572706934
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "death",
+   "frame": 2,
+   "pixels": 417,
+   "bbox": [
+    6,
+    9,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.858513189448441,
+    25.985611510791365
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "death",
+   "frame": 3,
+   "pixels": 113,
+   "bbox": [
+    10,
+    27,
+    22,
+    39
+   ],
+   "width": 13,
+   "centroid": [
+    15.929203539823009,
+    34.67256637168141
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 11
+  },
+  {
+   "tag": "death",
+   "frame": 4,
+   "pixels": 33,
+   "bbox": [
+    13,
+    33,
+    19,
+    39
+   ],
+   "width": 7,
+   "centroid": [
+    16,
+    36.90909090909091
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 7
+  },
+  {
+   "tag": "death",
+   "frame": 5,
+   "pixels": 9,
+   "bbox": [
+    14,
+    37,
+    18,
+    39
+   ],
+   "width": 5,
+   "centroid": [
+    16,
+    38.44444444444444
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "respawn",
+   "frame": 0,
+   "pixels": 9,
+   "bbox": [
+    14,
+    37,
+    18,
+    39
+   ],
+   "width": 5,
+   "centroid": [
+    16,
+    38.44444444444444
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 5
+  },
+  {
+   "tag": "respawn",
+   "frame": 1,
+   "pixels": 33,
+   "bbox": [
+    13,
+    33,
+    19,
+    39
+   ],
+   "width": 7,
+   "centroid": [
+    16,
+    36.90909090909091
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 7
+  },
+  {
+   "tag": "respawn",
+   "frame": 2,
+   "pixels": 315,
+   "bbox": [
+    8,
+    9,
+    22,
+    39
+   ],
+   "width": 15,
+   "centroid": [
+    15.790476190476191,
+    26.263492063492063
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 11
+  },
+  {
+   "tag": "respawn",
+   "frame": 3,
+   "pixels": 459,
+   "bbox": [
+    6,
+    1,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.854030501089325,
+    20.87363834422658
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  },
+  {
+   "tag": "respawn",
+   "frame": 4,
+   "pixels": 458,
+   "bbox": [
+    6,
+    2,
+    25,
+    39
+   ],
+   "width": 20,
+   "centroid": [
+    15.860262008733624,
+    20.91703056768559
+   ],
+   "isolated": 0,
+   "components": 1,
+   "baseline": 10
+  }
+ ],
+ "defects": []
+}

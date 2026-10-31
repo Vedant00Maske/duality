@@ -1,0 +1,16 @@
+{
+  "name": "@duality/web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@colyseus/sdk": "0.18.8",
+    "@duality/shared": "1.0.0",
+    "phaser": "3.90.0"
+  }
+}
