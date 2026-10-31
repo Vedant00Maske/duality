@@ -1,5 +1,5 @@
 // Everything drawn for one level: background, terrain, puzzle objects,
-// characters, beams and the Resonance Link. Rendering only — it never decides
+// characters, beams and the Resonance Link. Rendering only - it never decides
 // game outcomes; it reads the (predicted) World each frame.
 
 import Phaser from 'phaser';
@@ -99,6 +99,8 @@ export class LevelView {
   private lastWorld: World | null = null;
   private nearestSign = -1;
   private linkLevel = 0;
+  private signHint = '';
+  private shownHint = '';
   private time = 0;
   /** Fixed pool of expanding/contracting rings (link pulses, receivers, landings). */
   private rings: Ring[] = Array.from({ length: 24 }, () => ({ x: 0, y: 0, r0: 0, r1: 0, t: 1, life: 1, color: 0xffffff, width: 2 }));
@@ -251,6 +253,8 @@ export class LevelView {
   }
 
   destroy(): void {
+    const hint = document.getElementById('hud-sign');
+    if (hint) hint.hidden = true;
     for (const o of this.env) o.destroy();
     this.env = [];
     for (const o of this.layers) o.destroy();
@@ -597,6 +601,7 @@ export class LevelView {
 
     // Only the nearest sign shows its bubble, so tutorial text never overlaps.
     this.nearestSign = -1;
+    this.signHint = '';
     let best = Infinity;
     const lp = w.players[this.local];
     for (const si of this.level.ofType.sign) {
@@ -606,6 +611,11 @@ export class LevelView {
     }
     for (let i = 0; i < this.objViews.length; i++) this.renderObj(this.objViews[i], w, pred, alpha, t, i);
     this.renderBeams(w, t);
+    if (this.signHint !== this.shownHint) {
+      this.shownHint = this.signHint;
+      const el = document.getElementById('hud-sign');
+      if (el) { el.textContent = this.signHint; el.hidden = !this.signHint; }
+    }
     for (let i = 0; i < 2; i++) this.renderChar(i, pred, alpha, dtMs, t, cam);
     this.renderLink(pred, alpha, t, dtMs / 1000);
     this.renderRings(dtMs / 1000);
@@ -1008,10 +1018,8 @@ export class LevelView {
         v.tile!.tilePositionY -= 0.6;
         break;
       case 'sign': {
-        const near = this.nearestSign === i;
-        const bubble = v.img as unknown as Phaser.GameObjects.Text;
-        const target = near ? 1 : 0;
-        bubble.setAlpha(bubble.alpha + (target - bubble.alpha) * 0.15);
+        // Hint text is shown in the HUD (top right) so it never covers the course.
+        if (this.nearestSign === i) this.signHint = o.text;
         if (!v.sp) v.text!.setY(o.y + TILE - 16 + Math.sin(t * 3) * 1.5);
         break;
       }

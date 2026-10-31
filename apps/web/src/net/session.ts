@@ -55,9 +55,9 @@ function endpoint(): string {
 export function friendlyError(e: unknown): string {
   const err = e as { code?: number; message?: string };
   const msg = (err?.message ?? '').toString();
-  if (/full|locked/i.test(msg) || err?.code === 4401) return 'That room is full — DUALITY rooms hold exactly 2 players.';
+  if (/full|locked/i.test(msg) || err?.code === 4401) return 'That room is full - DUALITY rooms hold exactly 2 players.';
   if (err?.code === 4400 || /refresh/i.test(msg)) return msg || 'This game was updated. Please refresh the page.';
-  if (err?.code === 522 || /not found|invalid room/i.test(msg)) return "No room with that code. Check the code with your partner — rooms close when everyone leaves.";
+  if (err?.code === 522 || /not found|invalid room/i.test(msg)) return "No room with that code. Check the code with your partner - rooms close when everyone leaves.";
   if (/expired|consumed/i.test(msg)) return 'That session expired. Please join again.';
   if (/fetch|network|Failed|ECONN|websocket/i.test(msg)) return "Can't reach the game server. Check your connection and try again.";
   return msg || 'Something went wrong. Please try again.';

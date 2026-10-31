@@ -152,7 +152,7 @@ async function joinRoom(): Promise<void> {
   const code = normalizeRoomCode(input.value);
   input.value = code;
   if (!isValidRoomCode(code)) {
-    homeError(code.length < 5 ? 'Room codes are 5 characters — ask your partner for theirs.' : 'That code has characters that are never used in room codes (like O, 0, I or 1). Double-check it.');
+    homeError(code.length < 5 ? 'Room codes are 5 characters - ask your partner for theirs.' : 'That code has characters that are never used in room codes (like O, 0, I or 1). Double-check it.');
     input.focus();
     return;
   }
@@ -181,7 +181,7 @@ async function copy(text: string, what: string): Promise<void> {
     await navigator.clipboard.writeText(text);
     toast(`${what} copied!`, 'good', 1800);
   } catch {
-    toast(`Copy failed — the code is ${session.roomCode}`, 'warn');
+    toast(`Copy failed - the code is ${session.roomCode}`, 'warn');
   }
 }
 
@@ -225,11 +225,11 @@ function renderLobby(s: RoomStateView): void {
   const mine = s.slots.find((x) => x.sid === me);
   const ready = $<HTMLButtonElement>('#btn-ready');
   ready.classList.toggle('is-on', !!mine?.ready);
-  ready.textContent = mine?.ready ? (filled < 2 ? 'Ready — waiting for partner' : 'Ready ✓ — waiting for partner') : "I'm ready";
+  ready.textContent = mine?.ready ? (filled < 2 ? 'Ready - waiting for partner' : 'Ready ✓ - waiting for partner') : "I'm ready";
   const status = $('#lobby-status');
   status.innerHTML = filled < 2
     ? 'Share the code with your partner. They open this page on their device and tap <b>Join</b>.'
-    : s.slots.every((x) => x.ready) ? 'Both ready — starting…' : 'Both players are here! Pick a level, then both press <b>I’m ready</b>.';
+    : s.slots.every((x) => x.ready) ? 'Both ready - starting…' : 'Both players are here! Pick a level, then both press <b>I’m ready</b>.';
   $('#host-note').textContent = isHost ? 'You pick the level' : 'Your partner (host) picks the level';
   $$<HTMLButtonElement>('.level-card').forEach((b) => {
     const id = b.dataset.level!;
@@ -257,7 +257,7 @@ function renderGame(s: RoomStateView): void {
     $('#hud-objective').textContent = def.objective;
     const you = $('#hud-you');
     you.className = `hud-you ${myIdx === 0 ? 'ember' : 'tide'}`;
-    you.textContent = myIdx === 0 ? 'You are EMBER 🔥 — lava is safe, water is not' : 'You are TIDE 💧 — water is safe, lava is not';
+    you.textContent = myIdx === 0 ? 'You are EMBER 🔥 - lava is safe, water is not' : 'You are TIDE 💧 - water is safe, lava is not';
     startMusic(def.world);
     setPause(false);
   }
@@ -312,7 +312,7 @@ function renderResults(s: RoomStateView, myIdx: number): void {
     const last = !nextLevelId(s.level);
     $('#results-panel').classList.toggle('victory', last);
     if (last) sfx.victory();
-    $('#results-kicker').textContent = last ? 'The Sky Vault is restored — DUALITY complete!' : 'Level complete';
+    $('#results-kicker').textContent = last ? 'The Sky Vault is restored - DUALITY complete!' : 'Level complete';
     $('#results-title').textContent = last ? 'Ember & Tide, together' : def.name;
     $$('#results-stars span').forEach((el, k) => {
       el.classList.remove('on');
@@ -334,7 +334,7 @@ function renderResults(s: RoomStateView, myIdx: number): void {
   $('#btn-vote-replay').classList.toggle('is-on', mine === 'replay');
   $('#vote-status').textContent = mine && !theirs ? 'Waiting for your partner to choose…'
     : !mine && theirs ? `Your partner chose “${label(theirs)}”.`
-      : mine && theirs && mine !== theirs ? `You picked different options — agree on one!` : '';
+      : mine && theirs && mine !== theirs ? `You picked different options - agree on one!` : '';
 }
 
 let hudTimer = 0;
@@ -354,7 +354,7 @@ export function onFrame(info: FrameInfo): void {
   const net = $('#hud-net');
   net.classList.toggle('mid', ping >= 120 && ping < 250);
   net.classList.toggle('bad', ping >= 250);
-  $('#hud-ping').textContent = settings.debug ? `${ping}ms · ${info.fps}fps · Δ${info.correction.toFixed(1)} · q${info.pending}` : ping ? `${ping} ms` : '—';
+  $('#hud-ping').textContent = settings.debug ? `${ping}ms · ${info.fps}fps · Δ${info.correction.toFixed(1)} · q${info.pending}` : ping ? `${ping} ms` : '-';
 }
 
 // ---------------------------------------------------------------------------

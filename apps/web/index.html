@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#0d0b17" />
-    <meta name="description" content="DUALITY — a two-player online co-op puzzle platformer. Ember and Tide, two devices, one Resonance Link. No sign-up, no install." />
-    <meta property="og:title" content="DUALITY — co-op elemental puzzle platformer" />
+    <meta name="description" content="DUALITY - a two-player online co-op puzzle platformer. Ember and Tide, two devices, one Resonance Link. No sign-up, no install." />
+    <meta property="og:title" content="DUALITY - co-op elemental puzzle platformer" />
     <meta property="og:description" content="Two players, two devices, one shared puzzle world. Create a room, share the code, and link up." />
     <meta property="og:image" content="/cover.png" />
     <link rel="icon" href="/favicon.png" type="image/png" sizes="96x96" />
@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet" />
-    <title>DUALITY — Co-op Elemental Puzzle Platformer</title>
+    <title>DUALITY - Co-op Elemental Puzzle Platformer</title>
   </head>
   <body>
     <div id="game" aria-hidden="true"></div>
@@ -44,7 +44,7 @@
             <button class="btn btn-ghost" data-open="credits">Credits</button>
             <ul class="facts">
               <li><b>2 players</b> · each on their own device</li>
-              <li><b>12 levels</b> · 4 worlds · ~3–6 min each</li>
+              <li><b>12 levels</b> · 4 worlds · ~3-6 min each</li>
               <li><b>No sign-up</b>, no install · keyboard or touch</li>
             </ul>
           </nav>
@@ -95,7 +95,7 @@
               <div class="slot-avatar ember-avatar" aria-hidden="true"></div>
               <div class="slot-body">
                 <div class="slot-role">EMBER <small>fire · walks on lava</small></div>
-                <div class="slot-name">—</div>
+                <div class="slot-name">-</div>
                 <div class="slot-state">Waiting…</div>
               </div>
             </div>
@@ -104,7 +104,7 @@
               <div class="slot-avatar tide-avatar" aria-hidden="true"></div>
               <div class="slot-body">
                 <div class="slot-role">TIDE <small>water · walks on water</small></div>
-                <div class="slot-name">—</div>
+                <div class="slot-name">-</div>
                 <div class="slot-state">Waiting…</div>
               </div>
             </div>
@@ -127,17 +127,18 @@
       <section id="screen-game" class="screen hud" hidden>
         <div class="hud-top">
           <div class="hud-level">
-            <div id="hud-level-name" class="hud-title">—</div>
-            <div id="hud-objective" class="hud-objective">—</div>
+            <div id="hud-level-name" class="hud-title">-</div>
+            <div id="hud-objective" class="hud-objective">-</div>
           </div>
           <div class="hud-right">
             <div class="hud-chip" title="Level time"><span class="ico">⏱</span><span id="hud-time">0:00</span></div>
             <div class="hud-chip" title="Deaths"><span class="ico">✖</span><span id="hud-deaths">0</span></div>
-            <div class="hud-chip hud-net" id="hud-net" title="Connection"><span class="dot"></span><span id="hud-ping">—</span></div>
+            <div class="hud-chip hud-net" id="hud-net" title="Connection"><span class="dot"></span><span id="hud-ping">-</span></div>
             <button id="btn-mute" class="btn-icon" aria-label="Mute audio" aria-pressed="false">🔊</button>
             <button id="btn-pause" class="btn-icon" aria-label="Pause menu"><svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true"><rect x="1" y="1" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="9" y="1" width="4" height="14" rx="1.5" fill="currentColor"/></svg></button>
           </div>
         </div>
+        <div id="hud-sign" class="hud-sign" role="status" hidden></div>
         <div class="hud-you" id="hud-you"></div>
         <div id="countdown" class="countdown" hidden></div>
 
@@ -194,12 +195,12 @@
             <span class="hero hero-ember"></span><span class="hero-link"></span><span class="hero hero-tide"></span>
           </div>
           <div class="results-kicker" id="results-kicker">Level complete</div>
-          <h2 id="results-title">—</h2>
+          <h2 id="results-title">-</h2>
           <div class="stars" id="results-stars"><span>★</span><span>★</span><span>★</span></div>
           <div class="results-stats">
-            <div><span class="k">Time</span><span class="v" id="results-time">—</span></div>
-            <div><span class="k">Deaths</span><span class="v" id="results-deaths">—</span></div>
-            <div><span class="k">Par</span><span class="v" id="results-par">—</span></div>
+            <div><span class="k">Time</span><span class="v" id="results-time">-</span></div>
+            <div><span class="k">Deaths</span><span class="v" id="results-deaths">-</span></div>
+            <div><span class="k">Par</span><span class="v" id="results-par">-</span></div>
           </div>
           <p class="muted small" id="results-explain">★ finish · ★ beat par time · ★ 2 deaths or fewer (combined)</p>
           <div class="panel-actions">
@@ -219,7 +220,7 @@
           <div class="howto">
             <div class="howto-col">
               <h4>Goal</h4>
-              <p>Get <b class="e">Ember</b> and <b class="t">Tide</b> into the glowing exit <b>together</b>. Every level needs both of you — nobody can finish alone.</p>
+              <p>Get <b class="e">Ember</b> and <b class="t">Tide</b> into the glowing exit <b>together</b>. Every level needs both of you - nobody can finish alone.</p>
               <h4>Elements</h4>
               <ul>
                 <li><span class="sw lava"></span><b class="e">Ember</b> is fire: safe in lava, extinguished by water.</li>
@@ -234,8 +235,8 @@
               <table class="keys">
                 <tr><td>Move</td><td><kbd>←</kbd><kbd>→</kbd> or <kbd>A</kbd><kbd>D</kbd></td></tr>
                 <tr><td>Jump</td><td><kbd>Space</kbd> <kbd>W</kbd> <kbd>↑</kbd> (hold for higher)</td></tr>
-                <tr><td>Interact</td><td><kbd>E</kbd> / <kbd>X</kbd> — levers &amp; mirrors</td></tr>
-                <tr><td>Overview</td><td><kbd>Tab</kbd> / <kbd>M</kbd> — see the whole level</td></tr>
+                <tr><td>Interact</td><td><kbd>E</kbd> / <kbd>X</kbd> - levers &amp; mirrors</td></tr>
+                <tr><td>Overview</td><td><kbd>Tab</kbd> / <kbd>M</kbd> - see the whole level</td></tr>
                 <tr><td>Restart</td><td><kbd>R</kbd> · Pause <kbd>Esc</kbd></td></tr>
                 <tr><td>Touch</td><td>On-screen buttons appear on phones &amp; tablets</td></tr>
               </table>
@@ -248,7 +249,7 @@
                 <li><b>Fans</b> lift you. Matching colours show what's wired together.</li>
               </ul>
               <h4>Scoring</h4>
-              <p>Up to 3 stars per level: finish, beat the par time, and keep combined deaths to 2 or fewer. A full run takes about 30–45 minutes.</p>
+              <p>Up to 3 stars per level: finish, beat the par time, and keep combined deaths to 2 or fewer. A full run takes about 30-45 minutes.</p>
             </div>
           </div>
         </div>
@@ -280,7 +281,7 @@
           <h2>Credits</h2>
           <div class="credits">
             <div class="hero-pair small" aria-hidden="true"><span class="hero hero-ember"></span><span class="hero-link"></span><span class="hero hero-tide"></span></div>
-            <p><b>DUALITY</b> — an online co-op elemental puzzle platformer.</p>
+            <p><b>DUALITY</b> - an online co-op elemental puzzle platformer.</p>
             <dl>
               <dt>Game, code &amp; level design</dt><dd>Vedant00Maske</dd>
               <dt>Pixel art</dt><dd>Original, generated by the project's own art tools (<code>tools/art</code>)</dd>

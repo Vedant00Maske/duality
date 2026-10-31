@@ -372,3 +372,10 @@ kbd {
 .credits code { font-size: 12px; }
 
 #btn-mute { font-size: 15px; line-height: 1; }
+
+/* sign hints: top right, under the HUD buttons, never over the course */
+.hud-sign {
+  position: absolute; top: calc(64px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right));
+  max-width: min(300px, 46vw); padding: 9px 12px; border-radius: 12px; background: rgba(13, 11, 23, 0.86);
+  border: 1px solid var(--line); color: var(--text); font: 700 13px/1.4 var(--font); pointer-events: none;
+}

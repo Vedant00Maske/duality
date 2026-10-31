@@ -1,6 +1,6 @@
 import type { LevelDef } from '../types.js';
 
-// World 2 — Machineworks. Crates, lifts, levers, timed machinery and the
+// World 2 - Machineworks. Crates, lifts, levers, timed machinery and the
 // Resonance Link as a puzzle tool.
 
 export const WORLD2: LevelDef[] = [
@@ -37,7 +37,7 @@ export const WORLD2: LevelDef[] = [
     ],
     legend: {
       s: { type: 'sign', text: 'Stand on the plate to run the lift. Send your partner up first!' },
-      c: { type: 'sign', text: 'Push the crate off the ledge — it can hold the plate down instead of your partner.' },
+      c: { type: 'sign', text: 'Push the crate off the ledge - it can hold the plate down instead of your partner.' },
       a: { type: 'plate' },
       P: { type: 'platform', to: [0, -8], loop: true, speed: 2.5, when: ['a'] },
       k: { type: 'crate' },
@@ -76,7 +76,7 @@ export const WORLD2: LevelDef[] = [
       '############################################',
     ],
     legend: {
-      s: { type: 'sign', text: 'Ride the platform across the toxin. Your partner drives it with the lever — call out "Go!"' },
+      s: { type: 'sign', text: 'Ride the platform across the toxin. Your partner drives it with the lever - call out "Go!"' },
       t: { type: 'sign', text: 'Saws hurt. Watch the rhythm and jump over it as it comes toward you.' },
       q: { type: 'sign', text: "Ember's lever and Tide's lever only stay on for 5 seconds. Pull them together!" },
       l: { type: 'lever' },

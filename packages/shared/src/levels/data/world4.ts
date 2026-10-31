@@ -1,6 +1,6 @@
 import type { LevelDef } from '../types.js';
 
-// World 4 — Sky Vault. Wind, electricity and a finale that combines every
+// World 4 - Sky Vault. Wind, electricity and a finale that combines every
 // mechanic in the game.
 
 export const WORLD4: LevelDef[] = [
@@ -76,7 +76,7 @@ export const WORLD4: LevelDef[] = [
       '###################TTTTTTT##################',
     ],
     legend: {
-      s: { type: 'sign', text: 'Electric fields are deadly. Stand on your valve to short it out — your partner can pass while you hold it.' },
+      s: { type: 'sign', text: 'Electric fields are deadly. Stand on your valve to short it out - your partner can pass while you hold it.' },
       k: { type: 'sign', text: 'Charge the crystal over the pillar together, then sprint through the field before it powers back up.' },
       n: { type: 'node', element: 'tide', hold: true },
       m: { type: 'node', element: 'ember', hold: true },
@@ -95,7 +95,7 @@ export const WORLD4: LevelDef[] = [
     world: 4,
     index: 12,
     name: 'Convergence',
-    objective: 'The final exam: crate, light, wind and Link — every room needs both of you.',
+    objective: 'The final exam: crate, light, wind and Link - every room needs both of you.',
     tip: 'Checkpoints remember your progress. Take a breath between rooms.',
     par: 180,
     grid: [

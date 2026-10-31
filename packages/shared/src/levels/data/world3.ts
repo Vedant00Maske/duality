@@ -1,6 +1,6 @@
 import type { LevelDef } from '../types.js';
 
-// World 3 — Light Temple. Beams bounce off mirrors, split in prisms and
+// World 3 - Light Temple. Beams bounce off mirrors, split in prisms and
 // light receivers. Bodies cast shadows: standing in a beam blocks it.
 
 export const WORLD3: LevelDef[] = [
@@ -35,7 +35,7 @@ export const WORLD3: LevelDef[] = [
     ],
     legend: {
       s: { type: 'sign', text: 'Light bounces off mirrors. Stand next to YOUR mirror and press E to turn it.' },
-      k: { type: 'sign', text: 'Careful — your body blocks the beam. Step out of the light when you are done.' },
+      k: { type: 'sign', text: 'Careful - your body blocks the beam. Step out of the light when you are done.' },
       e: { type: 'emitter', dir: 'right' },
       a: { type: 'mirror', element: 'ember', orient: 0 },
       b: { type: 'mirror', element: 'tide', orient: 0 },

@@ -1,6 +1,6 @@
 import type { LevelDef } from '../types.js';
 
-// World 1 — Elemental Caverns. Teaches movement, elemental identity, plates,
+// World 1 - Elemental Caverns. Teaches movement, elemental identity, plates,
 // nodes, ice and the Resonance Link.
 
 export const WORLD1: LevelDef[] = [
@@ -37,7 +37,7 @@ export const WORLD1: LevelDef[] = [
       s: { type: 'sign', text: 'Move with ← → or A / D. Jump with Space, W or ↑.' },
       w: { type: 'sign', text: 'Tide is water: pools of water are safe for Tide, but put out Ember.' },
       a: { type: 'sign', text: 'Ember is fire: lava is safe for Ember, but boils Tide.' },
-      t: { type: 'sign', text: 'Green toxin is deadly to both of you — jump it!' },
+      t: { type: 'sign', text: 'Green toxin is deadly to both of you - jump it!' },
       r: { type: 'sign', text: 'Stand on either side of the crystal. Your Resonance Link powers it.' },
       c: { type: 'crystal' },
       D: { type: 'door', when: ['c'], latch: true },
@@ -122,7 +122,7 @@ export const WORLD1: LevelDef[] = [
       n: { type: 'node', element: 'tide' },
       B: { type: 'door', style: 'bridge', when: ['n'], invert: true },
       C: { type: 'checkpoint' },
-      k: { type: 'sign', text: 'Light the brazier and fill the valve together — each only stays lit for 8 seconds.' },
+      k: { type: 'sign', text: 'Light the brazier and fill the valve together - each only stays lit for 8 seconds.' },
       e: { type: 'node', element: 'ember', timer: 8 },
       t: { type: 'node', element: 'tide', timer: 8 },
       E: { type: 'door', when: ['e', 't'], latch: true },
